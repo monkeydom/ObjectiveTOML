@@ -142,14 +142,17 @@ public:
     }
     
     void visit(const cpptoml::value<cpptoml::local_date>& v) {
-        id value = ({
-            cpptoml::local_date ld = v.get();
-            NSDateComponents *result = [NSDateComponents new];
-            result.year = ld.year;
-            result.month = ld.month;
-            result.day = ld.day;
-            result;
-        });
+//        id value = ({
+//            cpptoml::local_date ld = v.get();
+//            NSDateComponents *result = [NSDateComponents new];
+//            result.year = ld.year;
+//            result.month = ld.month;
+//            result.day = ld.day;
+//            result;
+//        });
+        std::stringstream s("");
+        s << v.get();
+        id value = [NSString stringWithUTF8String:s.str().c_str()];
         writeValue(value);
     }
     

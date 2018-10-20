@@ -28,6 +28,32 @@ static void showLineWithContext(FILE *file, NSString *fullSourceString, NSIntege
     }];
 }
 
+void showError(NSError *error, NSData *inputData) {
+    char *bold="";
+    char *stopBold="";
+    if (isatty([[NSFileHandle fileHandleWithStandardError] fileDescriptor])) {
+        bold="\033[1m";
+        stopBold="\033[0m";
+    }
+    fputs(bold, stderr);
+    fputs("🚫 ",stderr);
+    fputs(error.localizedDescription.UTF8String, stderr);
+    fputs(stopBold, stderr);
+    fputs("\n", stderr);
+    fputs(error.localizedFailureReason.UTF8String, stderr);
+    fputs("\n", stderr);
+    
+    if ([error.domain isEqualToString:LMPTOMLErrorDomain]) {
+        NSString *errorString = error.localizedFailureReason;
+        NSRange atLineRange = [errorString rangeOfString:@"at line "];
+        if (atLineRange.location != NSNotFound) {
+            int context = 1;
+            NSInteger lineNumber = [[errorString substringFromIndex:NSMaxRange(atLineRange)] integerValue];
+            showLineWithContext(stderr, [[NSString alloc] initWithData:inputData encoding:NSUTF8StringEncoding], lineNumber, context);
+        }
+    }
+}
+
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
         if (argc <= 1) {
@@ -50,33 +76,20 @@ int main(int argc, const char * argv[]) {
             NSError *error;
             __auto_type tomlObject = [LMPTOMLSerialization TOMLObjectWithData:inputData error:&error];
             if (error) {
-                char *bold="";
-                char *stopBold="";
-                if (isatty([[NSFileHandle fileHandleWithStandardError] fileDescriptor])) {
-                    bold="\033[1m";
-                    stopBold="\033[0m";
-                }
-                fputs(bold, stderr);
-                fputs("🚫 ",stderr);
-                fputs(error.localizedDescription.UTF8String, stderr);
-                fputs(stopBold, stderr);
-                fputs("\n", stderr);
-                fputs(error.localizedFailureReason.UTF8String, stderr);
-                fputs("\n", stderr);
-                
-                if ([error.domain isEqualToString:LMPTOMLErrorDomain]) {
-                    NSString *errorString = error.localizedFailureReason;
-                    NSRange atLineRange = [errorString rangeOfString:@"at line "];
-                    if (atLineRange.location != NSNotFound) {
-                        int context = 1;
-                        NSInteger lineNumber = [[errorString substringFromIndex:NSMaxRange(atLineRange)] integerValue];
-                        showLineWithContext(stderr, [[NSString alloc] initWithData:inputData encoding:NSUTF8StringEncoding], lineNumber, context);
-                    }
-                }
-                
-            } else {
-                NSLog(@"%s %@",__FUNCTION__, tomlObject);
+                showError(error, inputData);
+                return EXIT_FAILURE;
             }
+            
+            // TODO: convert NSDateComponents back to strings again after handling dates special again
+            id jsonObject = tomlObject;
+            
+            NSData *data = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
+            if (error) {
+                showError(error, inputData);
+                return EXIT_FAILURE;
+            }
+            
+            [[NSFileHandle fileHandleWithStandardOutput] writeData:data];
         }
     }
     return EXIT_SUCCESS;

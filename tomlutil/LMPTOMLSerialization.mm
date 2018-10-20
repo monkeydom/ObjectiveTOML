@@ -30,7 +30,7 @@ struct membuf : std::streambuf {
         std::istream in(&sbuf);
         cpptoml::parser p{in};
         std::shared_ptr<cpptoml::table> g = p.parse();
-        std::cout << (*g) << std::endl;
+//        std::cout << (*g) << std::endl;
         
         // convert table to standard Objective-C objects
         toml_nsdictionary_writer dw;
