@@ -4,7 +4,7 @@
 //  Copyright © 2018 Lone Monkey Productions. All rights reserved.
 //
 
-@import Foundation;
+#import <Foundation/Foundation.h>
 
 @interface LMPTOMLSerialization : NSObject
 
