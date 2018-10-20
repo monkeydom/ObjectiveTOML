@@ -6,6 +6,9 @@
 
 #import <Foundation/Foundation.h>
 
+extern NSErrorDomain const LMPTOMLErrorDomain;
+
+
 @interface LMPTOMLSerialization : NSObject
 
 + (NSDictionary <NSString *, id>*)TOMLObjectWithData:(NSData *)data error:(NSError **)error;

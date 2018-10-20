@@ -51,7 +51,7 @@ point = { x = 1, y = 2 }
 # There are four ways to express strings: basic, multi-line basic, literal, and
 # multi-line literal. All strings must contain only valid UTF-8 characters.
 
-[string.basic]
+[string]
 
 basic = "I'm a string. \"You can quote me\". Name\tJos\u00E9\nLocation\tSF."
 
@@ -149,7 +149,7 @@ key = 6.626e-34
 [float.underscores]
 
 key1 = 9_224_617.445_991_228_313
-key2 = 1e3_8
+key2 = 1e1_00
 
 
 ################################################################################
@@ -173,6 +173,7 @@ False = false
 key1 = 1979-05-27T07:32:00Z
 key2 = 1979-05-27T00:32:00-07:00
 key3 = 1979-05-27T00:32:00.999999-07:00
+date = 1979-05-27
 
 
 ################################################################################

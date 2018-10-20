@@ -5,11 +5,15 @@
 
 #import "LMPTOMLSerialization.h"
 #include "cpptoml.h"
+#include "LMP_cpptoml_visitors.h"
 
 #include <iostream>
 #include <istream>
 #include <streambuf>
 #include <string>
+
+NSErrorDomain const LMPTOMLErrorDomain = @"productions.monkey.lone.TOML";
+static NSInteger const LMPTOMLParseErrorCode = 7031;
 
 struct membuf : std::streambuf {
     membuf(char* begin, char* end) {
@@ -27,19 +31,23 @@ struct membuf : std::streambuf {
         cpptoml::parser p{in};
         std::shared_ptr<cpptoml::table> g = p.parse();
         std::cout << (*g) << std::endl;
+        
+        // convert table to standard Objective-C objects
+        toml_nsdictionary_writer dw;
+        g->accept(dw);
+        NSDictionary *result = dw.dictionary();
+        
+        return result;
     } catch (const cpptoml::parse_exception& e) {
-        std::cerr << "Failed to parse toml data of length " << data.length << ": " << e.what() << std::endl;
-        // TODO: properly parse exception into NSError
         if (error) {
-            *error = [NSError errorWithDomain:NSPOSIXErrorDomain code:7031 userInfo:@{
-                                                                                      NSDebugDescriptionErrorKey : [NSString stringWithFormat:@"%s", e.what()]
+            *error = [NSError errorWithDomain:LMPTOMLErrorDomain
+                                         code:LMPTOMLParseErrorCode
+                                     userInfo:@{
+                                                NSLocalizedDescriptionKey : @"Input TOML could not be parsed",
+                                                NSLocalizedFailureReasonErrorKey : [NSString stringWithFormat:@"%s", e.what()],
                                                                                       }];
         }
         return nil;
     }
-
-    
-    
-    return @{@"TOML" : [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]};
 }
 @end

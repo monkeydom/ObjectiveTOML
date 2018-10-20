@@ -25,10 +25,11 @@
 
 /* Begin PBXFileReference section */
 		F22CB707217B1FD600D1565D /* tomlutil */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = tomlutil; sourceTree = BUILT_PRODUCTS_DIR; };
-		F22CB70A217B1FD600D1565D /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		F22CB70A217B1FD600D1565D /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		F22CB712217B239300D1565D /* LMPTOMLSerialization.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMPTOMLSerialization.h; sourceTree = "<group>"; };
 		F22CB713217B239300D1565D /* LMPTOMLSerialization.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LMPTOMLSerialization.mm; sourceTree = "<group>"; };
 		F22CB715217B2B1C00D1565D /* cpptoml.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; name = cpptoml.h; path = submodules/cpptoml/include/cpptoml.h; sourceTree = SOURCE_ROOT; };
+		F2BC7534217B44D10056FAED /* LMP_cpptoml_visitors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMP_cpptoml_visitors.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +65,7 @@
 				F22CB70A217B1FD600D1565D /* main.m */,
 				F22CB712217B239300D1565D /* LMPTOMLSerialization.h */,
 				F22CB713217B239300D1565D /* LMPTOMLSerialization.mm */,
+				F2BC7534217B44D10056FAED /* LMP_cpptoml_visitors.h */,
 				F22CB715217B2B1C00D1565D /* cpptoml.h */,
 			);
 			path = tomlutil;
