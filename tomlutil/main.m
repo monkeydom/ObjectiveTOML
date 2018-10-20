@@ -7,6 +7,15 @@
 @import Foundation;
 #import "LMPTOMLSerialization.h"
 
+typedef CF_ENUM(int, LMPFileFormat) {
+    FileFormatUnknown = 0,
+    FileFormatPlistBinary = kCFPropertyListBinaryFormat_v1_0,
+    FileFormatPlistXML = kCFPropertyListXMLFormat_v1_0,
+//    FileFormatPlistOpenStep = kCFPropertyListOpenStepFormat, cannot write anymore anyways
+    FileFormatJSON = 801,
+    FileFormatTOML = 901,
+};
+
 static void showLineWithContext(FILE *file, NSString *fullSourceString, NSInteger lineNumber, int context) {
     NSInteger lineNumberStart = MAX(1, lineNumber - context);
     NSInteger lineNumberStop = lineNumber + context;
@@ -28,7 +37,10 @@ static void showLineWithContext(FILE *file, NSString *fullSourceString, NSIntege
     }];
 }
 
-void showError(NSError *error, NSData *inputData) {
+void showErrorAndHalt(NSError *error, NSData *inputData) {
+    if (!error) {
+        return;
+    }
     char *bold="";
     char *stopBold="";
     if (isatty([[NSFileHandle fileHandleWithStandardError] fileDescriptor])) {
@@ -52,6 +64,8 @@ void showError(NSError *error, NSData *inputData) {
             showLineWithContext(stderr, [[NSString alloc] initWithData:inputData encoding:NSUTF8StringEncoding], lineNumber, context);
         }
     }
+    
+    exit(EXIT_FAILURE);
 }
 
 int main(int argc, const char * argv[]) {
@@ -63,8 +77,33 @@ int main(int argc, const char * argv[]) {
         }
         
         if (argc > 1) {
-            const char *filename = argv[argc-1];
-            NSString *filenameString = [NSString stringWithUTF8String:filename];
+            __block LMPFileFormat inputFormat = FileFormatUnknown;
+            __block LMPFileFormat outputFormat = FileFormatTOML; // default to toml
+            __block NSString *filenameString;
+            
+            __block NSString *flag = nil;
+            
+            [[NSProcessInfo processInfo].arguments enumerateObjectsUsingBlock:^(NSString *argument, NSUInteger index, BOOL *stop) {
+                if (index > 0) {
+                    if (flag) {
+                        if ([flag isEqualToString:@"-f"]) {
+                            outputFormat = [@{
+                                              @"toml" : @(FileFormatTOML),
+                                              @"json" : @(FileFormatJSON),
+                                              @"xml1" : @(FileFormatPlistXML),
+                                              @"binary1" : @(FileFormatPlistBinary),
+                                              }[argument] intValue] ?: outputFormat;
+                        }
+                        flag = nil;
+                    } else {
+                        if ([argument hasPrefix:@"-f"]) {
+                            flag = argument;
+                        } else {
+                            filenameString = argument;
+                        }
+                    }
+                }
+            }];
 
             NSData *inputData = [filenameString isEqualToString:@"-"] ? ({
                 [[NSFileHandle fileHandleWithStandardInput] readDataToEndOfFile];
@@ -72,24 +111,68 @@ int main(int argc, const char * argv[]) {
                 NSURL *fileURL =[NSURL fileURLWithPath:[filenameString stringByStandardizingPath]];
                 [NSData dataWithContentsOfURL:fileURL];
             });
+
+            
+            // determine input format
+            if (inputFormat == FileFormatUnknown) {
+                // Extensions
+                NSString *extension = [filenameString.pathExtension lowercaseString];
+                inputFormat = [@{
+                                 @".toml" : @(FileFormatTOML),
+                                 @".json" : @(FileFormatJSON),
+                                 @".js" : @(FileFormatJSON),
+                                 @".plist" : @(FileFormatPlistXML),
+                                 }[extension] intValue];
+            }
+
+            if (inputFormat == FileFormatUnknown) {
+                // check first bytes
+                char *bytes = (char *)inputData.bytes;
+                if (bytes[0] == '<' &&
+                    bytes[1] == '?') {
+                    inputFormat = FileFormatPlistXML;
+                } else if ([inputData length] > 6 && [[[NSString alloc] initWithBytes:bytes length:6 encoding:NSASCIIStringEncoding] isEqualToString:@"bplist"]) {
+                    inputFormat = FileFormatPlistBinary;
+                } else if (bytes[0] == '{') {
+                    inputFormat = FileFormatJSON;
+                }
+            }
+            
+            if (inputFormat == FileFormatUnknown) {
+                inputFormat = FileFormatTOML; // default to TOML if nothing else was found
+            }
             
             NSError *error;
-            __auto_type tomlObject = [LMPTOMLSerialization TOMLObjectWithData:inputData error:&error];
-            if (error) {
-                showError(error, inputData);
-                return EXIT_FAILURE;
+        
+            NSDictionary<NSString *, id> *tomlObject;
+            NSDictionary<NSString *, id> *dictionaryObject;
+            if (inputFormat == FileFormatTOML) {
+                tomlObject = [LMPTOMLSerialization TOMLObjectWithData:inputData error:&error];
+                showErrorAndHalt(error, inputData);
+                dictionaryObject = tomlObject;
+            } else if (inputFormat == FileFormatJSON) {
+                dictionaryObject = [NSJSONSerialization JSONObjectWithData:inputData options:0 error:&error];
+                showErrorAndHalt(error, inputData);
+            } else {
+                dictionaryObject = [NSPropertyListSerialization propertyListWithData:inputData options:0 format:nil error:&error];
+                showErrorAndHalt(error, inputData);
             }
             
+
+            NSData *outputData;
+            if (outputFormat == FileFormatTOML) {
+                outputData = [LMPTOMLSerialization dataWithTOMLObject:tomlObject ?: dictionaryObject error:&error];
+                showErrorAndHalt(error, inputData);
+            } else if (outputFormat == FileFormatJSON) {
+                outputData = [NSJSONSerialization dataWithJSONObject:dictionaryObject options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
+                showErrorAndHalt(error, inputData);
+            } else {
+                outputData = [NSPropertyListSerialization dataWithPropertyList:dictionaryObject format:(NSPropertyListFormat)outputFormat options:0 error:&error];
+                showErrorAndHalt(error, inputData);
+            }
             // TODO: convert NSDateComponents back to strings again after handling dates special again
-            id jsonObject = tomlObject;
             
-            NSData *data = [NSJSONSerialization dataWithJSONObject:jsonObject options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
-            if (error) {
-                showError(error, inputData);
-                return EXIT_FAILURE;
-            }
-            
-            [[NSFileHandle fileHandleWithStandardOutput] writeData:data];
+            [[NSFileHandle fileHandleWithStandardOutput] writeData:outputData];
         }
     }
     return EXIT_SUCCESS;

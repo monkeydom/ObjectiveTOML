@@ -12,5 +12,6 @@ extern NSErrorDomain const LMPTOMLErrorDomain;
 @interface LMPTOMLSerialization : NSObject
 
 + (NSDictionary <NSString *, id>*)TOMLObjectWithData:(NSData *)data error:(NSError **)error;
++ (NSData *)dataWithTOMLObject:(NSDictionary<NSString *, id> *)tomlObject error:(NSError **)error;
 
 @end
