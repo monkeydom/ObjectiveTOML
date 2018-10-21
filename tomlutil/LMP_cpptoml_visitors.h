@@ -10,108 +10,6 @@
 #define LMP_cpptoml_visitors_h
 
 /**
- * A visitor for toml objects that writes to an output stream in the JSON
- * format that the toml-test suite expects.
- */
-class toml_test_writer
-{
-public:
-    toml_test_writer(std::ostream& s) : stream_(s)
-    {
-        // nothing
-    }
-    
-    void visit(const cpptoml::value<std::string>& v)
-    {
-        stream_ << "{\"type\":\"string\",\"value\":\""
-        << cpptoml::toml_writer::escape_string(v.get()) << "\"}";
-    }
-    
-    void visit(const cpptoml::value<int64_t>& v)
-    {
-        stream_ << "{\"type\":\"integer\",\"value\":\"" << v.get() << "\"}";
-    }
-    
-    void visit(const cpptoml::value<double>& v)
-    {
-        stream_ << "{\"type\":\"float\",\"value\":\"" << v.get() << "\"}";
-    }
-    
-    void visit(const cpptoml::value<cpptoml::local_date>& v)
-    {
-        stream_ << "{\"type\":\"local_date\",\"value\":\"" << v.get() << "\"}";
-    }
-    
-    void visit(const cpptoml::value<cpptoml::local_time>& v)
-    {
-        stream_ << "{\"type\":\"local_time\",\"value\":\"" << v.get() << "\"}";
-    }
-    
-    void visit(const cpptoml::value<cpptoml::local_datetime>& v)
-    {
-        stream_ << "{\"type\":\"local_datetime\",\"value\":\"" << v.get()
-        << "\"}";
-    }
-    
-    void visit(const cpptoml::value<cpptoml::offset_datetime>& v)
-    {
-        stream_ << "{\"type\":\"datetime\",\"value\":\"" << v.get() << "\"}";
-    }
-    
-    void visit(const cpptoml::value<bool>& v)
-    {
-        stream_ << "{\"type\":\"bool\",\"value\":\"" << v << "\"}";
-    }
-    
-    void visit(const cpptoml::array& arr)
-    {
-        stream_ << "{\"type\":\"array\",\"value\":[";
-        auto it = arr.get().begin();
-        while (it != arr.get().end())
-        {
-            (*it)->accept(*this);
-            if (++it != arr.get().end())
-                stream_ << ", ";
-        }
-        stream_ << "]}";
-    }
-    
-    void visit(const cpptoml::table_array& tarr)
-    {
-        stream_ << "[";
-        auto arr = tarr.get();
-        auto ait = arr.begin();
-        while (ait != arr.end())
-        {
-            (*ait)->accept(*this);
-            if (++ait != arr.end())
-                stream_ << ", ";
-        }
-        stream_ << "]";
-    }
-    
-    void visit(const cpptoml::table& t)
-    {
-        stream_ << "{";
-        auto it = t.begin();
-        while (it != t.end())
-        {
-            stream_ << '"' << cpptoml::toml_writer::escape_string(it->first)
-            << "\":";
-            it->second->accept(*this);
-            if (++it != t.end())
-                stream_ << ", ";
-        }
-        stream_ << "}";
-    }
-    
-private:
-    std::ostream& stream_;
-};
-
-
-
-/**
  * A visitor for toml objects that writes to an NSMutableDictionary
  */
 class toml_nsdictionary_writer {
@@ -142,38 +40,60 @@ public:
     }
     
     void visit(const cpptoml::value<cpptoml::local_date>& v) {
-//        id value = ({
-//            cpptoml::local_date ld = v.get();
-//            NSDateComponents *result = [NSDateComponents new];
-//            result.year = ld.year;
-//            result.month = ld.month;
-//            result.day = ld.day;
-//            result;
-//        });
-        std::stringstream s("");
-        s << v.get();
-        id value = [NSString stringWithUTF8String:s.str().c_str()];
+        id value = ({
+            cpptoml::local_date ld = v.get();
+            NSDateComponents *result = [NSDateComponents new];
+            result.year = ld.year;
+            result.month = ld.month;
+            result.day = ld.day;
+            result;
+        });
         writeValue(value);
     }
     
     void visit(const cpptoml::value<cpptoml::local_time>& v) {
-        std::stringstream s("");
-        s << v.get();
-        id value = [NSString stringWithUTF8String:s.str().c_str()];
+        id value = ({
+            cpptoml::local_time ld = v.get();
+            NSDateComponents *result = [NSDateComponents new];
+            result.hour = ld.hour;
+            result.minute = ld.minute;
+            result.second = ld.second;
+            result.nanosecond = ld.microsecond * 1000;
+            result;
+        });
         writeValue(value);
     }
     
     void visit(const cpptoml::value<cpptoml::local_datetime>& v) {
-        std::stringstream s("");
-        s << v.get();
-        id value = [NSString stringWithUTF8String:s.str().c_str()];
+        id value = ({
+            cpptoml::local_datetime ld = v.get();
+            NSDateComponents *result = [NSDateComponents new];
+            result.year = ld.year;
+            result.month = ld.month;
+            result.day = ld.day;
+            result.hour = ld.hour;
+            result.minute = ld.minute;
+            result.second = ld.second;
+            result.nanosecond = ld.microsecond * 1000;
+            result;
+        });
         writeValue(value);
     }
     
     void visit(const cpptoml::value<cpptoml::offset_datetime>& v) {
-        std::stringstream s("");
-        s << v.get();
-        id value = [NSString stringWithUTF8String:s.str().c_str()];
+        id value = ({
+            cpptoml::offset_datetime ld = v.get();
+            NSDateComponents *result = [NSDateComponents new];
+            result.year = ld.year;
+            result.month = ld.month;
+            result.day = ld.day;
+            result.hour = ld.hour;
+            result.minute = ld.minute;
+            result.second = ld.second;
+            result.nanosecond = ld.microsecond * 1000;
+            result.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:(ld.hour_offset * 60 + ld.minute_offset) * 60];
+            result;
+        });
         writeValue(value);
     }
     

@@ -149,7 +149,6 @@ int main(int argc, const char * argv[]) {
             if (inputFormat == FileFormatTOML) {
                 tomlObject = [LMPTOMLSerialization TOMLObjectWithData:inputData error:&error];
                 showErrorAndHalt(error, inputData);
-                dictionaryObject = tomlObject;
             } else if (inputFormat == FileFormatJSON) {
                 dictionaryObject = [NSJSONSerialization JSONObjectWithData:inputData options:0 error:&error];
                 showErrorAndHalt(error, inputData);
@@ -163,14 +162,18 @@ int main(int argc, const char * argv[]) {
             if (outputFormat == FileFormatTOML) {
                 outputData = [LMPTOMLSerialization dataWithTOMLObject:tomlObject ?: dictionaryObject error:&error];
                 showErrorAndHalt(error, inputData);
-            } else if (outputFormat == FileFormatJSON) {
-                outputData = [NSJSONSerialization dataWithJSONObject:dictionaryObject options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
-                showErrorAndHalt(error, inputData);
             } else {
-                outputData = [NSPropertyListSerialization dataWithPropertyList:dictionaryObject format:(NSPropertyListFormat)outputFormat options:0 error:&error];
-                showErrorAndHalt(error, inputData);
+                if (!dictionaryObject) {
+                    dictionaryObject = [LMPTOMLSerialization serializableObjectWithTOMLObject:tomlObject];
+                }
+                if (outputFormat == FileFormatJSON) {
+                    outputData = [NSJSONSerialization dataWithJSONObject:dictionaryObject options:NSJSONWritingPrettyPrinted | NSJSONWritingSortedKeys error:&error];
+                    showErrorAndHalt(error, inputData);
+                } else {
+                    outputData = [NSPropertyListSerialization dataWithPropertyList:dictionaryObject format:(NSPropertyListFormat)outputFormat options:0 error:&error];
+                    showErrorAndHalt(error, inputData);
+                }
             }
-            // TODO: convert NSDateComponents back to strings again after handling dates special again
             
             [[NSFileHandle fileHandleWithStandardOutput] writeData:outputData];
         }

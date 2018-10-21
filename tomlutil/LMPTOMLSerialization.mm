@@ -4,6 +4,9 @@
 //  Copyright © 2018 Lone Monkey Productions. All rights reserved.
 
 #import "LMPTOMLSerialization.h"
+
+// make map ordered so the output is canonical
+#define CPPTOML_USE_MAP
 #include "cpptoml.h"
 #include "LMP_cpptoml_visitors.h"
 
@@ -53,7 +56,7 @@ struct membuf : std::streambuf {
 }
 
 static void writeDictionaryToTable(NSDictionary<NSString *, id> *dict, std::shared_ptr<cpptoml::table> table) {
-    for (NSString *key in [dict.allKeys sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)].reverseObjectEnumerator) {
+    for (NSString *key in dict.keyEnumerator) {
         auto cppKey = std::string(key.UTF8String);
         auto cppValue = ObjectToValue(dict[key]);
         table->insert(cppKey, cppValue);
@@ -82,6 +85,54 @@ static std::shared_ptr<cpptoml::base> ObjectToValue(id objectValue) {
         }
     } else if ([objectValue isKindOfClass:[NSDictionary class]]) {
         return DictionaryToTable(objectValue);
+    } else if ([objectValue isKindOfClass:[NSDateComponents class]]) {
+        NSDateComponents *dc = objectValue;
+        if (YES) {
+            if (dc.year == NSDateComponentUndefined) {
+                cpptoml::local_time lt;
+                if (dc.hour != NSDateComponentUndefined) {
+                    lt.hour = (int)dc.hour;
+                }
+                if (dc.minute != NSDateComponentUndefined) {
+                    lt.minute = (int)dc.minute;
+                }
+                if (dc.second != NSDateComponentUndefined) {
+                    lt.second = (int)dc.second;
+                }
+                if (dc.nanosecond != NSDateComponentUndefined) {
+                    lt.microsecond = (int)(dc.nanosecond / 1000);
+                }
+                return cpptoml::make_value(lt);
+            }
+            
+            cpptoml::local_date ld;
+            ld.year = (int)dc.year;
+            ld.month = (int)dc.month;
+            ld.day = (int)dc.day;
+            if (dc.hour == NSDateComponentUndefined) {
+                return cpptoml::make_value(ld);
+            }
+            
+            cpptoml::local_datetime ldt;
+            static_cast<cpptoml::local_date&>(ldt) = ld;
+            ldt.hour = (int)dc.hour;
+            ldt.minute = (int)dc.minute;
+            ldt.second = (int)dc.second;
+            if (dc.nanosecond != NSDateComponentUndefined) {
+                ldt.microsecond = (int)(dc.nanosecond / 1000);
+            }
+            if (!dc.timeZone) {
+                return cpptoml::make_value(ldt);
+            }
+            
+            cpptoml::offset_datetime odt;
+            static_cast<cpptoml::local_datetime&>(odt) = ldt;
+            int minutesFromGMT = (int)[dc.timeZone secondsFromGMT] / 60;
+            odt.hour_offset = minutesFromGMT / 60;
+            odt.minute_offset = minutesFromGMT % 60;
+            return cpptoml::make_value(odt);
+        }
+        
     } else {
         auto reason = std::string([NSString stringWithFormat:@"%@ cannot be encoded to TOML", objectValue].UTF8String);
         throw std::out_of_range{reason};
@@ -133,7 +184,6 @@ static std::shared_ptr<cpptoml::table> DictionaryToTable(NSDictionary<NSString *
 }
 
 + (NSData *)dataWithTOMLObject:(NSDictionary<NSString *, id> *)tomlObject error:(NSError **)error {
-    
     try {
         auto root = DictionaryToTable(tomlObject);
         
@@ -155,5 +205,49 @@ static std::shared_ptr<cpptoml::table> DictionaryToTable(NSDictionary<NSString *
     }
 }
 
+static NSString *TOMLTimeStringFromComponents(NSDateComponents *dc) {
+    NSMutableString *result = [NSMutableString new];
+    if (dc.year != NSDateComponentUndefined) {
+        [result appendFormat:@"%04d-%02d-%2d", (int)dc.year, (int)dc.month, (int)dc.day];
+    }
+    if (dc.minute != NSDateComponentUndefined) {
+        if (result.length > 0) {
+            [result appendString:@"T"];
+        }
+        [result appendFormat:@"%02d:%02d:%02d", (int)dc.hour, (int)dc.minute, (int)dc.second];
+        if (dc.nanosecond != NSDateComponentUndefined && dc.nanosecond > 0) {
+            [result appendFormat:@".%06d", (int)(dc.nanosecond / 1000)];
+        }
+        if (dc.timeZone) {
+            int minuteOffset = (int)dc.timeZone.secondsFromGMT / 60;
+            if (minuteOffset == 0) {
+                [result appendString:@"Z"];
+            } else {
+                [result appendString:minuteOffset > 0 ? @"+" : @"-"];
+                [result appendFormat:@"%02d:%02d", ABS(minuteOffset) / 60, ABS(minuteOffset) % 60];
+            }
+        }
+    }
+    return result;
+}
+
++ (NSDictionary<NSString *, id> *)serializableObjectWithTOMLObject:(NSDictionary<NSString *, id> *)tomlObject {
+    NSMutableDictionary *result = [tomlObject mutableCopy];
+    for (NSString *key in result.allKeys) {
+        id value = result[key];
+        if ([value isKindOfClass:[NSDictionary class]]) {
+            result[key] = [self serializableObjectWithTOMLObject:value];
+        } else if ([value isKindOfClass:[NSArray class]] && [[value firstObject] isKindOfClass:[NSDictionary class]]) {
+            NSMutableArray *array = [NSMutableArray new];
+            for (NSDictionary *dict in value) {
+                [array addObject:[self serializableObjectWithTOMLObject:dict]];
+            }
+            result[key] = array;
+        } else if ([value isKindOfClass:[NSDateComponents class]]) {
+            result[key] = TOMLTimeStringFromComponents(value);
+        }
+    }
+    return result;
+}
 
 @end
