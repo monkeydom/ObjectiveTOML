@@ -138,6 +138,9 @@ Full header:
 
 ## Changelog
 
+* v1.0.1
+   * Fixed an issue with cpptoml with trailing whitespace and comments in dates as well as allowing for empty inline tables now.
+
 * v1.0
    * Reading and writing works. Dates are handeled. Conversion between json, plists and toml works as expected.
 
