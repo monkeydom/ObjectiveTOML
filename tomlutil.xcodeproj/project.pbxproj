@@ -29,6 +29,7 @@
 		F22CB712217B239300D1565D /* LMPTOMLSerialization.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMPTOMLSerialization.h; sourceTree = "<group>"; };
 		F22CB713217B239300D1565D /* LMPTOMLSerialization.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LMPTOMLSerialization.mm; sourceTree = "<group>"; };
 		F22CB715217B2B1C00D1565D /* cpptoml.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; name = cpptoml.h; path = submodules/cpptoml/include/cpptoml.h; sourceTree = SOURCE_ROOT; };
+		F2962202217F303B00C44751 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F2BC7534217B44D10056FAED /* LMP_cpptoml_visitors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMP_cpptoml_visitors.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -67,6 +68,7 @@
 				F22CB713217B239300D1565D /* LMPTOMLSerialization.mm */,
 				F2BC7534217B44D10056FAED /* LMP_cpptoml_visitors.h */,
 				F22CB715217B2B1C00D1565D /* cpptoml.h */,
+				F2962202217F303B00C44751 /* Info.plist */,
 			);
 			path = tomlutil;
 			sourceTree = "<group>";
@@ -251,6 +253,10 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CODE_SIGN_STYLE = Automatic;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				INFOPLIST_FILE = tomlutil/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = productions.monkey.lone.tomlutil;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -260,6 +266,10 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CODE_SIGN_STYLE = Automatic;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				INFOPLIST_FILE = tomlutil/Info.plist;
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				PRODUCT_BUNDLE_IDENTIFIER = productions.monkey.lone.tomlutil;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
