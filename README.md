@@ -1,10 +1,10 @@
 # ObjectiveTOML
 
-ObjectiveTOML is a clean and nice Objective-C API read wand write [TOML](https://github.com/toml-lang/toml) files. It is utilizing [cpptoml](https://github.com/skystrife/cpptoml) and therefore on par with its TOML compliance. At time of writing this is [TOML 0.5.0](https://github.com/toml-lang/toml/blob/master/versions/en/toml-v0.5.0.md)
+ObjectiveTOML is a clean and nice Objective-C API to read and write [TOML](https://github.com/toml-lang/toml) files. It is utilizing [cpptoml](https://github.com/skystrife/cpptoml) and therefore on par with its TOML compliance. At time of writing this is [TOML 0.5.0](https://github.com/toml-lang/toml/blob/master/versions/en/toml-v0.5.0.md)
 
-The main project is a small command line utility to convert between TOML, JSON and the xml and binary plist format on macOS.
+The main target is a small command line utility `tomlutil` to convert between TOML, JSON and the xml and binary plist format on macOS. To use the API in your app it should be enough to snapshot the .h and .mm files of the project to your project.
 
-The API is aligned with `NSJSONSerialization`.
+The API is aligned with `NSJSONSerialization`:
 
 ```objectivec
 #import "LMPTOMLSerialization.h"
@@ -16,7 +16,7 @@ NSDictionary <NSString *, id>* tomlObject =
 
 ```
 
-The `tomlutil` has nice parsing error reporting:
+The `tomlutil` has nice parsing error reporting (if you only want this, you can use the `-lint` option:
 
 ```
 $> ./tomlutil ObjectiveTOML/toml-examples/example-v0.4.0.toml 
@@ -25,6 +25,18 @@ Failed to parse value type at line 32
   31: [x.y.z.w] # for this to work
 > 32: unsupported =
   33: 
+```
+
+Current usage output:
+
+```
+tomlutil v1.1.0 (cpptoml v0.1.1)
+
+Usage: tomlutil [-f json|xml1|binary1|toml] file [outputfile]
+
+A file of '-' reads from stdin. Can read json, plists and toml. Output defaults to stdout.
+-f format   Output format. One of json, xml, binary1, toml. Defaults to toml.
+-lint       Just lint with cpptoml, no output.
 ```
 
 Simple conversion of the Mojave News.app plist to TOML:
@@ -137,6 +149,10 @@ Full header:
 ```
 
 ## Changelog
+
+* v1.1.0
+   * Updated to cpptoml v0.1.1
+   * Added more arguments, help and error reporting to the `tomlutil`
 
 * v1.0.1
    * Fixed an issue with cpptoml with trailing whitespace and comments in dates as well as allowing for empty inline tables now.
