@@ -16,7 +16,7 @@ extern NSErrorDomain const LMPTOMLErrorDomain;
 
  @param data NSData representing a TOML file
  @param error helpful information if the parsing fails
- @return NSDictionary representing the contents of the TOML file. Note that given dates will be represented as NSDateComponents, use +serializationObjectWtihTOMLObject: to convert those to RFC3339 strings that can be used in JSON or PropertyList serializations.
+ @return NSDictionary representing the contents of the TOML file. Note that given dates will be represented as NSDateComponents, use +serializableObjectWithTOMLObject: to convert those to RFC3339 strings that can be used in JSON or PropertyList serializations.
  */
 + (NSDictionary <NSString *, id>*)TOMLObjectWithData:(NSData *)data error:(NSError **)error;
 

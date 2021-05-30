@@ -23,113 +23,6 @@ public:
         return [resultContainer_[@"TOMLRoot"] copy];
     }
 
-    
-//    void visit(const cpptoml::value<std::string>& v) {
-//        id value = [NSString stringWithUTF8String:v.get().c_str()];
-//        writeValue(value);
-//    }
-//
-//    void visit(const cpptoml::value<int64_t>& v) {
-//        id value = [NSNumber numberWithLongLong:v.get()];
-//        writeValue(value);
-//    }
-//
-//    void visit(const cpptoml::value<double>& v) {
-//        id value = [NSNumber numberWithDouble:v.get()];
-//        writeValue(value);
-//    }
-//
-//    void visit(const cpptoml::value<cpptoml::local_date>& v) {
-//        id value = ({
-//            cpptoml::local_date ld = v.get();
-//            NSDateComponents *result = [NSDateComponents new];
-//            result.year = ld.year;
-//            result.month = ld.month;
-//            result.day = ld.day;
-//            result;
-//        });
-//        writeValue(value);
-//    }
-//
-//    void visit(const cpptoml::value<cpptoml::local_time>& v) {
-//        id value = ({
-//            cpptoml::local_time ld = v.get();
-//            NSDateComponents *result = [NSDateComponents new];
-//            result.hour = ld.hour;
-//            result.minute = ld.minute;
-//            result.second = ld.second;
-//            result.nanosecond = ld.microsecond * 1000;
-//            result;
-//        });
-//        writeValue(value);
-//    }
-//
-//    void visit(const cpptoml::value<cpptoml::local_datetime>& v) {
-//        id value = ({
-//            cpptoml::local_datetime ld = v.get();
-//            NSDateComponents *result = [NSDateComponents new];
-//            result.year = ld.year;
-//            result.month = ld.month;
-//            result.day = ld.day;
-//            result.hour = ld.hour;
-//            result.minute = ld.minute;
-//            result.second = ld.second;
-//            result.nanosecond = ld.microsecond * 1000;
-//            result;
-//        });
-//        writeValue(value);
-//    }
-//
-//    void visit(const cpptoml::value<cpptoml::offset_datetime>& v) {
-//        id value = ({
-//            cpptoml::offset_datetime ld = v.get();
-//            NSDateComponents *result = [NSDateComponents new];
-//            result.year = ld.year;
-//            result.month = ld.month;
-//            result.day = ld.day;
-//            result.hour = ld.hour;
-//            result.minute = ld.minute;
-//            result.second = ld.second;
-//            result.nanosecond = ld.microsecond * 1000;
-//            result.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:(ld.hour_offset * 60 + ld.minute_offset) * 60];
-//            result;
-//        });
-//        writeValue(value);
-//    }
-//
-//    void visit(const cpptoml::value<bool>& v) {
-//        id value = v.get() ? @YES : @NO;
-//        writeValue(value);
-//    }
-//
-//    void visit(const cpptoml::array& arr) {
-//        withContainerIsDictionary( NO, ^{
-//            for (auto it = arr.get().begin(); it != arr.get().end(); it++) {
-//                (*it)->accept(*this);
-//            }
-//        });
-//    }
-//
-//    void visit(const cpptoml::table_array& tarr) {
-//
-//        withContainerIsDictionary( NO, ^{
-//            auto arr = tarr.get();
-//            for (auto ait = arr.begin(); ait != arr.end(); ait++) {
-//                (*ait)->accept(*this);
-//            }
-//        });
-//
-//    }
-//
-//    void visit(const cpptoml::table& t) {
-//        withContainerIsDictionary( YES, ^{
-//            for (auto it = t.begin(); it != t.end(); it++) {
-//                currentKey_ = [NSString stringWithUTF8String:it->first.c_str()];
-//                it->second->accept(*this);
-//            }
-//        });
-//    }
-
     void visit(const toml::string& v) {
         id value = [NSString stringWithUTF8String: static_cast<std::string>(v).c_str()];
         writeValue(value);
@@ -155,36 +48,48 @@ public:
             result.nanosecond = v.millisecond * 1000000 + v.microsecond * 1000 + v.nanosecond;
             result;
         });
-        NSLog(@"%@", [value debugDescription]);
+//        NSLog(@"%@", [value debugDescription]);
         writeValue(value);
     }
     
+    // untested, need to be looked again to have proper roundtrip I guess.
+    void visit(const toml::local_datetime& v) {
+        id value = ({
+            NSDateComponents *result = [NSDateComponents new];
+            result.year = v.date.year;
+            result.month = v.date.month + 1;
+            result.day = v.date.day;
+            result.hour = v.time.hour;
+            result.minute = v.time.minute;
+            result.second = v.time.second;
+            result.nanosecond = v.time.millisecond * 1000000 + v.time.microsecond * 1000 + v.time.nanosecond;
+            result;
+        });
+        writeValue(value);
+    }
 
-    
-//    void visit(const toml::local_datetime& v) {
-//        id value = ({
-//            NSDateComponents *result = [NSDateComponents new];
-//            result.year = v.year;
-//            result.month = v.month + 1;
-//            result.day = v.day;
-//            result.hour = ld.hour;
-//            result.minute = ld.minute;
-//            result.second = ld.second;
-//            result.nanosecond = ld.microsecond * 1000;
-//            result.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:(ld.hour_offset * 60 + ld.minute_offset) * 60];
-//            result;
-//        });
-//        writeValue(value);
-//    }
+    void visit(const toml::offset_datetime& v) {
+        id value = ({
+            NSDateComponents *result = [NSDateComponents new];
+            result.year = v.date.year;
+            result.month = v.date.month + 1;
+            result.day = v.date.day;
+            result.hour = v.time.hour;
+            result.minute = v.time.minute;
+            result.second = v.time.second;
+            result.nanosecond = v.time.millisecond * 1000000 + v.time.microsecond * 1000 + v.time.nanosecond;
+            result.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:(v.offset.hour * 60 + v.offset.minute) * 60];
+            result;
+        });
+        writeValue(value);
+    }
 
 
     void visit(const toml::array& t) {
         withContainerIsDictionary( NO, ^{
             for (auto it = t.begin(); it != t.end(); it++) {
-//                std::cout << it->first << "  ->  " << it->second << std::endl;
                 visit(*it);
             }
-//            std::cout << "array" << std::endl;
         });
     }
 
@@ -192,13 +97,9 @@ public:
     void visit(const toml::table& t) {
         withContainerIsDictionary( YES, ^{
             for (auto it = t.begin(); it != t.end(); it++) {
-                
                 currentKey_ = [NSString stringWithUTF8String: it->first.c_str()];
-                
-//                std::cout << it->first << "  ->  " << it->second << std::endl;
                 visit(it->second);
             }
-//            std::cout << "Table" << std::endl;
         });
     }
     
@@ -228,13 +129,14 @@ public:
             case toml::value_t::local_time :
                 visit(toml::get<toml::local_time>(dunno));
                 break;
-//            case toml::value_t::local_datetime :
-//                visit(toml::get<toml::local_datetime>(dunno));
-//                break;
-//            case toml::value_t::offset_datetime :
-//                visit(toml::get<toml::offset_datetime>(dunno));
+            case toml::value_t::local_datetime :
+                visit(toml::get<toml::local_datetime>(dunno));
+                break;
+            case toml::value_t::offset_datetime :
+                visit(toml::get<toml::offset_datetime>(dunno));
                 break;
             default:
+                // have all types now, should not happen anymore™
                 std::cout << "- '" << dunno << "' --------- not yet implemented" << std::endl;
                 break;
         }
@@ -280,8 +182,5 @@ private:
     NSString *currentKey_;
     NSMutableArray *currentArray_;
 };
-
-
-
 
 #endif /* LMP_toml_visitors_h */

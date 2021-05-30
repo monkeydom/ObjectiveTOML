@@ -13,6 +13,7 @@
 #include <iostream>
 #include <istream>
 #include <streambuf>
+#include <strstream>
 #include <string>
 
 #include "LMP_toml_visitors.h"
@@ -22,95 +23,44 @@ NSErrorDomain const LMPTOMLErrorDomain = @"productions.monkey.lone.TOML";
 static NSInteger const LMPTOMLParseErrorCode = 7031;
 static NSInteger const LMPTOMLWriteErrorCode = 7001;
 
-struct membuf : std::streambuf {
-    membuf(char* begin, char* end) {
-        this->setg(begin, begin, end);
-    }
-};
-
 @implementation LMPTOMLSerialization
-
-template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
-// explicit deduction guide (not needed as of C++20)
-template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 + (NSDictionary <NSString *, id>*)TOMLObjectWithData:(NSData *)data error:(NSError **)error {
     
-        try {
-            char *bytes = (char *)data.bytes;
-
-//            seems to have issues now with modern cpp, need to fix. only reads two bytes before it ends.
-//            membuf sbuf(bytes, bytes + data.length);
-//            std::istream stream(&sbuf);
-            
-            std::istringstream stream(std::string(bytes, data.length));
-
-            const auto data = toml::parse(stream);
-//            cpptoml::parser p{in};
-//            std::shared_ptr<cpptoml::table> g = p.parse();
-     //        std::cout << (*g) << std::endl;
-            
-            toml_nsdictionary_writer dw;
-            
-            dw.visit(toml::get<toml::table>(data));
-    
-            // convert table to standard Objective-C objects
-//           toml_nsdictionary_writer dw;
-           // g->accept(dw);
-
-            
-            // std::cout << " --- " << data << " --- \n";
-
-            toml::visit(overloaded {
-                [](const toml::table &val) -> void {std::cout << "table"; },
-        [](const auto& val) -> void {
-                std::cout << "some visit";
-                //val << std::endl;
-            }
-        }, data);
-
-            
-            NSDictionary *result = dw.dictionary();
-    
-            return result;
-        } catch (const toml::exception& e) {
-            if (error) {
-                *error = [NSError errorWithDomain:LMPTOMLErrorDomain
-                                             code:LMPTOMLParseErrorCode
-                                         userInfo:@{
-                                                    NSLocalizedDescriptionKey : @"Input TOML could not be parsed",
-                                                    NSLocalizedFailureReasonErrorKey : [NSString stringWithFormat:@"%s", e.what()],
-                                                                                          }];
-            }
-            return nil;
+    try {
+        char *bytes = (char *)data.bytes;
+        
+        // deprecated but seems to do what i want, the implementation previously was missing seek capabilities.
+        // see https://stackoverflow.com/questions/13059091/creating-an-input-stream-from-constant-memory#comment115305688_13059195
+        std::strstreambuf sbuf(bytes, data.length);
+        std::istream stream(&sbuf);
+        
+        // this works as well, probably does more copying than we need
+        // std::istringstream stream(std::string(bytes, data.length));
+        
+        // parse
+        const auto data = toml::parse(stream);
+        
+        // convert table to standard Objective-C objects
+        toml_nsdictionary_writer dw;
+        dw.visit(toml::get<toml::table>(data));
+        
+        // std::cout << " --- " << data << " --- \n";
+        
+        NSDictionary *result = dw.dictionary();
+        return result;
+        
+    } catch (const toml::exception& e) {
+        if (error) {
+            *error = [NSError errorWithDomain:LMPTOMLErrorDomain
+                                         code:LMPTOMLParseErrorCode
+                                     userInfo:@{
+                                         NSLocalizedDescriptionKey : @"Input TOML could not be parsed",
+                                         NSLocalizedFailureReasonErrorKey : [NSString stringWithFormat:@"%s", e.what()],
+                                     }];
         }
-
-    return nil;
-//    try {
-//        char *bytes = (char *)data.bytes;
-//        membuf sbuf(bytes, bytes + data.length);
-//        std::istream in(&sbuf);
-//        cpptoml::parser p{in};
-//        std::shared_ptr<cpptoml::table> g = p.parse();
-// //        std::cout << (*g) << std::endl;
-//
-//        // convert table to standard Objective-C objects
-//        toml_nsdictionary_writer dw;
-//        g->accept(dw);
-//        NSDictionary *result = dw.dictionary();
-//
-//        return result;
-//    } catch (const cpptoml::parse_exception& e) {
-//        if (error) {
-//            *error = [NSError errorWithDomain:LMPTOMLErrorDomain
-//                                         code:LMPTOMLParseErrorCode
-//                                     userInfo:@{
-//                                                NSLocalizedDescriptionKey : @"Input TOML could not be parsed",
-//                                                NSLocalizedFailureReasonErrorKey : [NSString stringWithFormat:@"%s", e.what()],
-//                                                                                      }];
-//        }
-//        return nil;
-//    }
+        return nil;
+    }
 }
 
 //static void writeDictionaryToTable(NSDictionary<NSString *, id> *dict, std::shared_ptr<cpptoml::table> table) {
