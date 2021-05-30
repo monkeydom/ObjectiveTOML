@@ -5,15 +5,18 @@
 
 #import "LMPTOMLSerialization.h"
 
-// make map ordered so the output is canonical
-#define CPPTOML_USE_MAP
-#include "cpptoml.h"
-#include "LMP_cpptoml_visitors.h"
+// #define TOML11_COLORIZE_ERROR_MESSAGE
+
+// #define TOML11_PRESERVE_COMMENTS_BY_DEFAULT
+#include "toml.hpp"
 
 #include <iostream>
 #include <istream>
 #include <streambuf>
 #include <string>
+
+#include "LMP_toml_visitors.h"
+
 
 NSErrorDomain const LMPTOMLErrorDomain = @"productions.monkey.lone.TOML";
 static NSInteger const LMPTOMLParseErrorCode = 7031;
@@ -27,182 +30,238 @@ struct membuf : std::streambuf {
 
 @implementation LMPTOMLSerialization
 
+template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+// explicit deduction guide (not needed as of C++20)
+template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
+
 + (NSDictionary <NSString *, id>*)TOMLObjectWithData:(NSData *)data error:(NSError **)error {
-    try {
-        char *bytes = (char *)data.bytes;
-        membuf sbuf(bytes, bytes + data.length);
-        std::istream in(&sbuf);
-        cpptoml::parser p{in};
-        std::shared_ptr<cpptoml::table> g = p.parse();
-//        std::cout << (*g) << std::endl;
-        
-        // convert table to standard Objective-C objects
-        toml_nsdictionary_writer dw;
-        g->accept(dw);
-        NSDictionary *result = dw.dictionary();
-        
-        return result;
-    } catch (const cpptoml::parse_exception& e) {
-        if (error) {
-            *error = [NSError errorWithDomain:LMPTOMLErrorDomain
-                                         code:LMPTOMLParseErrorCode
-                                     userInfo:@{
-                                                NSLocalizedDescriptionKey : @"Input TOML could not be parsed",
-                                                NSLocalizedFailureReasonErrorKey : [NSString stringWithFormat:@"%s", e.what()],
-                                                                                      }];
-        }
-        return nil;
-    }
-}
+    
+        try {
+            char *bytes = (char *)data.bytes;
 
-static void writeDictionaryToTable(NSDictionary<NSString *, id> *dict, std::shared_ptr<cpptoml::table> table) {
-    for (NSString *key in dict.keyEnumerator) {
-        auto cppKey = std::string(key.UTF8String);
-        auto cppValue = ObjectToValue(dict[key]);
-        table->insert(cppKey, cppValue);
-    }
-}
-
-static std::shared_ptr<cpptoml::base> ObjectToValue(id objectValue) {
-    if ([objectValue isKindOfClass:[NSString class]]) {
-        NSString *val = objectValue;
-        return cpptoml::make_value<std::string>(std::string(val.UTF8String));
-    } else if ([objectValue isKindOfClass:[NSNumber class]]) {
-        NSNumber *val = objectValue;
-        if ((__bridge CFBooleanRef)val == kCFBooleanTrue ||
-            (__bridge CFBooleanRef)val == kCFBooleanFalse) {
-            return cpptoml::make_value<bool>(val.boolValue);
-        } else if (CFNumberIsFloatType((__bridge CFNumberRef)val)) {
-            return cpptoml::make_value<double>(val.doubleValue);
-        } else {
-            return cpptoml::make_value<long long>(val.longLongValue);
-        }
-    } else if ([objectValue isKindOfClass:[NSArray class]]) {
-        if ([[objectValue firstObject] isKindOfClass:[NSDictionary class]]) {
-            return ArrayToTableArray(objectValue);
-        } else {
-            return ArrayToArray(objectValue);
-        }
-    } else if ([objectValue isKindOfClass:[NSDictionary class]]) {
-        return DictionaryToTable(objectValue);
-    } else if ([objectValue isKindOfClass:[NSDateComponents class]]) {
-        NSDateComponents *dc = objectValue;
-        if (YES) {
-            if (dc.year == NSDateComponentUndefined) {
-                cpptoml::local_time lt;
-                if (dc.hour != NSDateComponentUndefined) {
-                    lt.hour = (int)dc.hour;
-                }
-                if (dc.minute != NSDateComponentUndefined) {
-                    lt.minute = (int)dc.minute;
-                }
-                if (dc.second != NSDateComponentUndefined) {
-                    lt.second = (int)dc.second;
-                }
-                if (dc.nanosecond != NSDateComponentUndefined) {
-                    lt.microsecond = (int)(dc.nanosecond / 1000);
-                }
-                return cpptoml::make_value(lt);
-            }
+//            seems to have issues now with modern cpp, need to fix. only reads two bytes before it ends.
+//            membuf sbuf(bytes, bytes + data.length);
+//            std::istream stream(&sbuf);
             
-            cpptoml::local_date ld;
-            ld.year = (int)dc.year;
-            ld.month = (int)dc.month;
-            ld.day = (int)dc.day;
-            if (dc.hour == NSDateComponentUndefined) {
-                return cpptoml::make_value(ld);
-            }
+            std::istringstream stream(std::string(bytes, data.length));
+
+            const auto data = toml::parse(stream);
+//            cpptoml::parser p{in};
+//            std::shared_ptr<cpptoml::table> g = p.parse();
+     //        std::cout << (*g) << std::endl;
             
-            cpptoml::local_datetime ldt;
-            static_cast<cpptoml::local_date&>(ldt) = ld;
-            ldt.hour = (int)dc.hour;
-            ldt.minute = (int)dc.minute;
-            ldt.second = (int)dc.second;
-            if (dc.nanosecond != NSDateComponentUndefined) {
-                ldt.microsecond = (int)(dc.nanosecond / 1000);
-            }
-            if (!dc.timeZone) {
-                return cpptoml::make_value(ldt);
-            }
+            toml_nsdictionary_writer dw;
             
-            cpptoml::offset_datetime odt;
-            static_cast<cpptoml::local_datetime&>(odt) = ldt;
-            int minutesFromGMT = (int)[dc.timeZone secondsFromGMT] / 60;
-            odt.hour_offset = minutesFromGMT / 60;
-            odt.minute_offset = minutesFromGMT % 60;
-            return cpptoml::make_value(odt);
-        }
-        
-    } else {
-        auto reason = std::string([NSString stringWithFormat:@"%@ cannot be encoded to TOML", objectValue].UTF8String);
-        throw std::out_of_range{reason};
-    }
-}
+            dw.visit(toml::get<toml::table>(data));
+    
+            // convert table to standard Objective-C objects
+//           toml_nsdictionary_writer dw;
+           // g->accept(dw);
 
-static std::shared_ptr<cpptoml::table_array> ArrayToTableArray(NSArray *array) {
-    auto tarr = cpptoml::make_table_array();
-    for (NSDictionary *objectValue in array) {
-        tarr->push_back(DictionaryToTable(objectValue));
-    }
-    return tarr;
-}
+            
+            // std::cout << " --- " << data << " --- \n";
 
-static std::shared_ptr<cpptoml::array> ArrayToArray(NSArray *array) {
-    auto arr = cpptoml::make_array();
-    for (id objectValue in array) {
-        auto val = ObjectToValue(objectValue);
-        if (val->is_value()) {
-            // FIXME: there needs to be better cpp foo to make this not be redundant
-            if ([objectValue isKindOfClass:[NSString class]]) {
-                NSString *val = objectValue;
-                arr->push_back(std::string(val.UTF8String));
-            } else if ([objectValue isKindOfClass:[NSNumber class]]) {
-                NSNumber *val = objectValue;
-                if ((__bridge CFBooleanRef)val == kCFBooleanTrue ||
-                    (__bridge CFBooleanRef)val == kCFBooleanFalse) {
-                    arr->push_back((bool)val.boolValue);
-                } else if (CFNumberIsFloatType((__bridge CFNumberRef)val)) {
-                    arr->push_back(val.doubleValue);
-                } else {
-                    arr->push_back(val.longLongValue);
-                }
+            toml::visit(overloaded {
+                [](const toml::table &val) -> void {std::cout << "table"; },
+        [](const auto& val) -> void {
+                std::cout << "some visit";
+                //val << std::endl;
             }
-        } else if (val->is_array()) {
-            arr->push_back(val->as_array());
-        } else if (val->is_table()) {
-            arr->push_back(val->as_array());
+        }, data);
+
+            
+            NSDictionary *result = dw.dictionary();
+    
+            return result;
+        } catch (const toml::exception& e) {
+            if (error) {
+                *error = [NSError errorWithDomain:LMPTOMLErrorDomain
+                                             code:LMPTOMLParseErrorCode
+                                         userInfo:@{
+                                                    NSLocalizedDescriptionKey : @"Input TOML could not be parsed",
+                                                    NSLocalizedFailureReasonErrorKey : [NSString stringWithFormat:@"%s", e.what()],
+                                                                                          }];
+            }
+            return nil;
         }
-    }
-    return arr;
+
+    return nil;
+//    try {
+//        char *bytes = (char *)data.bytes;
+//        membuf sbuf(bytes, bytes + data.length);
+//        std::istream in(&sbuf);
+//        cpptoml::parser p{in};
+//        std::shared_ptr<cpptoml::table> g = p.parse();
+// //        std::cout << (*g) << std::endl;
+//
+//        // convert table to standard Objective-C objects
+//        toml_nsdictionary_writer dw;
+//        g->accept(dw);
+//        NSDictionary *result = dw.dictionary();
+//
+//        return result;
+//    } catch (const cpptoml::parse_exception& e) {
+//        if (error) {
+//            *error = [NSError errorWithDomain:LMPTOMLErrorDomain
+//                                         code:LMPTOMLParseErrorCode
+//                                     userInfo:@{
+//                                                NSLocalizedDescriptionKey : @"Input TOML could not be parsed",
+//                                                NSLocalizedFailureReasonErrorKey : [NSString stringWithFormat:@"%s", e.what()],
+//                                                                                      }];
+//        }
+//        return nil;
+//    }
 }
 
-
-static std::shared_ptr<cpptoml::table> DictionaryToTable(NSDictionary<NSString *, id> *dictionary) {
-    auto tbl = cpptoml::make_table();
-    writeDictionaryToTable(dictionary, tbl);
-    return tbl;
-}
+//static void writeDictionaryToTable(NSDictionary<NSString *, id> *dict, std::shared_ptr<cpptoml::table> table) {
+//    for (NSString *key in dict.keyEnumerator) {
+//        auto cppKey = std::string(key.UTF8String);
+//        auto cppValue = ObjectToValue(dict[key]);
+//        table->insert(cppKey, cppValue);
+//    }
+//}
+//
+//static std::shared_ptr<cpptoml::base> ObjectToValue(id objectValue) {
+//    if ([objectValue isKindOfClass:[NSString class]]) {
+//        NSString *val = objectValue;
+//        return cpptoml::make_value<std::string>(std::string(val.UTF8String));
+//    } else if ([objectValue isKindOfClass:[NSNumber class]]) {
+//        NSNumber *val = objectValue;
+//        if ((__bridge CFBooleanRef)val == kCFBooleanTrue ||
+//            (__bridge CFBooleanRef)val == kCFBooleanFalse) {
+//            return cpptoml::make_value<bool>(val.boolValue);
+//        } else if (CFNumberIsFloatType((__bridge CFNumberRef)val)) {
+//            return cpptoml::make_value<double>(val.doubleValue);
+//        } else {
+//            return cpptoml::make_value<long long>(val.longLongValue);
+//        }
+//    } else if ([objectValue isKindOfClass:[NSArray class]]) {
+//        if ([[objectValue firstObject] isKindOfClass:[NSDictionary class]]) {
+//            return ArrayToTableArray(objectValue);
+//        } else {
+//            return ArrayToArray(objectValue);
+//        }
+//    } else if ([objectValue isKindOfClass:[NSDictionary class]]) {
+//        return DictionaryToTable(objectValue);
+//    } else if ([objectValue isKindOfClass:[NSDateComponents class]]) {
+//        NSDateComponents *dc = objectValue;
+//        if (YES) {
+//            if (dc.year == NSDateComponentUndefined) {
+//                cpptoml::local_time lt;
+//                if (dc.hour != NSDateComponentUndefined) {
+//                    lt.hour = (int)dc.hour;
+//                }
+//                if (dc.minute != NSDateComponentUndefined) {
+//                    lt.minute = (int)dc.minute;
+//                }
+//                if (dc.second != NSDateComponentUndefined) {
+//                    lt.second = (int)dc.second;
+//                }
+//                if (dc.nanosecond != NSDateComponentUndefined) {
+//                    lt.microsecond = (int)(dc.nanosecond / 1000);
+//                }
+//                return cpptoml::make_value(lt);
+//            }
+//
+//            cpptoml::local_date ld;
+//            ld.year = (int)dc.year;
+//            ld.month = (int)dc.month;
+//            ld.day = (int)dc.day;
+//            if (dc.hour == NSDateComponentUndefined) {
+//                return cpptoml::make_value(ld);
+//            }
+//
+//            cpptoml::local_datetime ldt;
+//            static_cast<cpptoml::local_date&>(ldt) = ld;
+//            ldt.hour = (int)dc.hour;
+//            ldt.minute = (int)dc.minute;
+//            ldt.second = (int)dc.second;
+//            if (dc.nanosecond != NSDateComponentUndefined) {
+//                ldt.microsecond = (int)(dc.nanosecond / 1000);
+//            }
+//            if (!dc.timeZone) {
+//                return cpptoml::make_value(ldt);
+//            }
+//
+//            cpptoml::offset_datetime odt;
+//            static_cast<cpptoml::local_datetime&>(odt) = ldt;
+//            int minutesFromGMT = (int)[dc.timeZone secondsFromGMT] / 60;
+//            odt.hour_offset = minutesFromGMT / 60;
+//            odt.minute_offset = minutesFromGMT % 60;
+//            return cpptoml::make_value(odt);
+//        }
+//
+//    } else {
+//        auto reason = std::string([NSString stringWithFormat:@"%@ cannot be encoded to TOML", objectValue].UTF8String);
+//        throw std::out_of_range{reason};
+//    }
+//}
+//
+//static std::shared_ptr<cpptoml::table_array> ArrayToTableArray(NSArray *array) {
+//    auto tarr = cpptoml::make_table_array();
+//    for (NSDictionary *objectValue in array) {
+//        tarr->push_back(DictionaryToTable(objectValue));
+//    }
+//    return tarr;
+//}
+//
+//static std::shared_ptr<cpptoml::array> ArrayToArray(NSArray *array) {
+//    auto arr = cpptoml::make_array();
+//    for (id objectValue in array) {
+//        auto val = ObjectToValue(objectValue);
+//        if (val->is_value()) {
+//            // FIXME: there needs to be better cpp foo to make this not be redundant
+//            if ([objectValue isKindOfClass:[NSString class]]) {
+//                NSString *val = objectValue;
+//                arr->push_back(std::string(val.UTF8String));
+//            } else if ([objectValue isKindOfClass:[NSNumber class]]) {
+//                NSNumber *val = objectValue;
+//                if ((__bridge CFBooleanRef)val == kCFBooleanTrue ||
+//                    (__bridge CFBooleanRef)val == kCFBooleanFalse) {
+//                    arr->push_back((bool)val.boolValue);
+//                } else if (CFNumberIsFloatType((__bridge CFNumberRef)val)) {
+//                    arr->push_back(val.doubleValue);
+//                } else {
+//                    arr->push_back(val.longLongValue);
+//                }
+//            }
+//        } else if (val->is_array()) {
+//            arr->push_back(val->as_array());
+//        } else if (val->is_table()) {
+//            arr->push_back(val->as_array());
+//        }
+//    }
+//    return arr;
+//}
+//
+//
+//static std::shared_ptr<cpptoml::table> DictionaryToTable(NSDictionary<NSString *, id> *dictionary) {
+//    auto tbl = cpptoml::make_table();
+//    writeDictionaryToTable(dictionary, tbl);
+//    return tbl;
+//}
 
 + (NSData *)dataWithTOMLObject:(NSDictionary<NSString *, id> *)tomlObject error:(NSError **)error {
-    try {
-        auto root = DictionaryToTable(tomlObject);
-        
-        std::stringstream s("");
-        s << *root;
-        std::string str = s.str();
-        NSData *result = [NSData dataWithBytes:str.data() length:str.length()];
-        return result;
-    } catch (const std::invalid_argument& e) {
-        if (error) {
-            *error = [NSError errorWithDomain:LMPTOMLErrorDomain
-                                         code:LMPTOMLWriteErrorCode
-                                     userInfo:@{
-                                                NSLocalizedDescriptionKey : @"Input objects could not be converted to TOML",
-                                                NSLocalizedFailureReasonErrorKey : [NSString stringWithFormat:@"%s", e.what()],
-                                                }];
-        }
-        return nil;
-    }
+//    try {
+//        auto root = DictionaryToTable(tomlObject);
+//
+//        std::stringstream s("");
+//        s << *root;
+//        std::string str = s.str();
+//        NSData *result = [NSData dataWithBytes:str.data() length:str.length()];
+//        return result;
+//    } catch (const std::invalid_argument& e) {
+//        if (error) {
+//            *error = [NSError errorWithDomain:LMPTOMLErrorDomain
+//                                         code:LMPTOMLWriteErrorCode
+//                                     userInfo:@{
+//                                                NSLocalizedDescriptionKey : @"Input objects could not be converted to TOML",
+//                                                NSLocalizedFailureReasonErrorKey : [NSString stringWithFormat:@"%s", e.what()],
+//                                                }];
+//        }
+//        return nil;
+//    }
+    return nil;
 }
 
 static NSString *TOMLTimeStringFromComponents(NSDateComponents *dc) {
