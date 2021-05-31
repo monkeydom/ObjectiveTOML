@@ -40,7 +40,7 @@ extern NSString * const LMPTOMLOptionKeySourceFileURL = @"sourceFileURL";
     try {
         char *bytes = (char *)data.bytes;
         
-        // deprecated but seems to do what i want, the implementation previously was missing seek capabilities.
+        // deprecated but seems to do what I want, the implementation previously was missing seek capabilities.
         // see https://stackoverflow.com/questions/13059091/creating-an-input-stream-from-constant-memory#comment115305688_13059195
         std::strstreambuf sbuf(bytes, data.length);
         std::istream stream(&sbuf);
@@ -236,7 +236,7 @@ extern NSString * const LMPTOMLOptionKeySourceFileURL = @"sourceFileURL";
 static NSString *TOMLTimeStringFromComponents(NSDateComponents *dc) {
     NSMutableString *result = [NSMutableString new];
     if (dc.year != NSDateComponentUndefined) {
-        [result appendFormat:@"%04d-%02d-%2d", (int)dc.year, (int)dc.month, (int)dc.day];
+        [result appendFormat:@"%04d-%02d-%02d", (int)dc.year, (int)dc.month, (int)dc.day];
     }
     if (dc.minute != NSDateComponentUndefined) {
         if (result.length > 0) {
@@ -259,18 +259,30 @@ static NSString *TOMLTimeStringFromComponents(NSDateComponents *dc) {
     return result;
 }
 
+static NSArray *serializableArray(NSArray *array) {
+    NSMutableArray *result = [array mutableCopy];
+    NSUInteger index = result.count;
+    while (index-- != 0) {
+        id value = result[index];
+        if ([value isKindOfClass:[NSArray class]]) {
+            result[index] = serializableArray(value);
+        } else if ([value isKindOfClass:[NSDictionary class]]) {
+            result[index] = [LMPTOMLSerialization serializableObjectWithTOMLObject:value];
+        } else if ([value isKindOfClass:[NSDateComponents class]]) {
+            result[index] = TOMLTimeStringFromComponents(value);
+        }
+    }
+    return result;
+}
+
 + (NSDictionary<NSString *, id> *)serializableObjectWithTOMLObject:(NSDictionary<NSString *, id> *)tomlObject {
     NSMutableDictionary *result = [tomlObject mutableCopy];
     for (NSString *key in result.allKeys) {
         id value = result[key];
         if ([value isKindOfClass:[NSDictionary class]]) {
             result[key] = [self serializableObjectWithTOMLObject:value];
-        } else if ([value isKindOfClass:[NSArray class]] && [[value firstObject] isKindOfClass:[NSDictionary class]]) {
-            NSMutableArray *array = [NSMutableArray new];
-            for (NSDictionary *dict in value) {
-                [array addObject:[self serializableObjectWithTOMLObject:dict]];
-            }
-            result[key] = array;
+        } else if ([value isKindOfClass:[NSArray class]]) {
+            result[key] = serializableArray(value);
         } else if ([value isKindOfClass:[NSDateComponents class]]) {
             result[key] = TOMLTimeStringFromComponents(value);
         }

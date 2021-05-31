@@ -98,16 +98,16 @@ int main(int argc, const char * argv[]) {
         if (argc <= 1) {
             NSString *shortVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
 //            NSString *bundleVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
-            NSString *cpptomlVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"LPMCpptomlVersion"];
+            NSString *toml11Version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"LPMToml11Version"];
 
-            NSString *versionLineString = [NSString stringWithFormat:@"tomlutil v%@ (cpptoml v%@)", shortVersion, cpptomlVersion];
+            NSString *versionLineString = [NSString stringWithFormat:@"tomlutil v%@ (toml11 v%@)", shortVersion, toml11Version];
             
             puts(versionLineString.UTF8String);
             puts("");
             puts("Usage: tomlutil [-f json|xml1|binary1|toml] file [outputfile]\n\n"
                  "A file of '-' reads from stdin. Can read json, plists and toml. Output defaults to stdout.\n"
-                 "-f format   Output format. One of json, xml, binary1, toml. Defaults to toml.\n"
-                 "-lint       Just lint with cpptoml, no output.");
+                 "-f format   Output format. One of json, xml1, binary1, toml. Defaults to toml.\n"
+                 "-lint       Just lint with toml11, no output.");
             return EXIT_SUCCESS;
         }
         
@@ -129,7 +129,12 @@ int main(int argc, const char * argv[]) {
                             if (outputFormat != FileFormatNone) {
                                 outputFormat = [@{
                                                   @"toml" : @(FileFormatTOML),
+
                                                   @"json" : @(FileFormatJSON),
+
+                                                  @"plist" : @(FileFormatPlistXML),
+                                                  @"xml" : @(FileFormatPlistXML),
+                                                  @"binary" : @(FileFormatPlistBinary),
                                                   @"xml1" : @(FileFormatPlistXML),
                                                   @"binary1" : @(FileFormatPlistBinary),
                                                   }[argument] intValue] ?: outputFormat;
