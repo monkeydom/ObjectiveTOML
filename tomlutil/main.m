@@ -17,26 +17,28 @@ typedef CF_ENUM(int, LMPFileFormat) {
     FileFormatNone = 99991,
 };
 
-static void showLineWithContext(FILE *file, NSString *fullSourceString, NSInteger lineNumber, int context) {
-    NSInteger lineNumberStart = MAX(1, lineNumber - context);
-    NSInteger lineNumberStop = lineNumber + context;
-    
-    NSMutableArray <NSString *>*lineArray = [NSMutableArray new];
-    __block NSInteger currentLineNumber = 1;
-    [fullSourceString enumerateLinesUsingBlock:^(NSString *line, BOOL *stop) {
-        if (currentLineNumber >= lineNumberStart) {
-            [lineArray addObject:line];
-        }
-        if (currentLineNumber >= lineNumberStop) { *stop = YES; }
-        currentLineNumber += 1;
-    }];
-    currentLineNumber = lineNumberStart;
-    int lineMaxWidth = (int)ceil(log10(lineNumberStop)) + 1;
-    [lineArray enumerateObjectsUsingBlock:^(NSString *line, NSUInteger index, BOOL *_stop) {
-        NSInteger number = index + lineNumberStart;
-        fprintf(file, "%s%*ld: %s\n", number == lineNumber ? "➤" : " ", lineMaxWidth, (long)number, [[line stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]] UTF8String]);
-    }];
-}
+
+// unused toml11 provides ample output
+//static void showLineWithContext(FILE *file, NSString *fullSourceString, NSInteger lineNumber, int context) {
+//    NSInteger lineNumberStart = MAX(1, lineNumber - context);
+//    NSInteger lineNumberStop = lineNumber + context;
+//
+//    NSMutableArray <NSString *>*lineArray = [NSMutableArray new];
+//    __block NSInteger currentLineNumber = 1;
+//    [fullSourceString enumerateLinesUsingBlock:^(NSString *line, BOOL *stop) {
+//        if (currentLineNumber >= lineNumberStart) {
+//            [lineArray addObject:line];
+//        }
+//        if (currentLineNumber >= lineNumberStop) { *stop = YES; }
+//        currentLineNumber += 1;
+//    }];
+//    currentLineNumber = lineNumberStart;
+//    int lineMaxWidth = (int)ceil(log10(lineNumberStop)) + 1;
+//    [lineArray enumerateObjectsUsingBlock:^(NSString *line, NSUInteger index, BOOL *_stop) {
+//        NSInteger number = index + lineNumberStart;
+//        fprintf(file, "%s%*ld: %s\n", number == lineNumber ? "➤" : " ", lineMaxWidth, (long)number, [[line stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]] UTF8String]);
+//    }];
+//}
 
 void showErrorAndHalt(NSError *error, NSData *inputData) {
     if (!error) {
@@ -44,7 +46,22 @@ void showErrorAndHalt(NSError *error, NSData *inputData) {
     }
     char *bold="";
     char *stopBold="";
-    if (isatty([[NSFileHandle fileHandleWithStandardError] fileDescriptor])) {
+    
+    BOOL supportsAnsiColor = isatty([[NSFileHandle fileHandleWithStandardError] fileDescriptor]);
+    
+    if (supportsAnsiColor) {
+        NSString *term = [[NSProcessInfo processInfo] environment][@"TERM"] ;
+        if (term && (
+            [term rangeOfString:@"color" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                     [term rangeOfString:@"ansi" options:NSCaseInsensitiveSearch].location != NSNotFound
+            )
+            ){
+        } else {
+            supportsAnsiColor = NO;
+        }
+        
+    }
+    if (supportsAnsiColor) {
         bold="\033[1m";
         stopBold="\033[0m";
     }
@@ -53,19 +70,14 @@ void showErrorAndHalt(NSError *error, NSData *inputData) {
     fputs(error.localizedDescription.UTF8String, stderr);
     fputs(stopBold, stderr);
     fputs("\n", stderr);
-    fputs(error.localizedFailureReason.UTF8String, stderr);
-    fputs("\n", stderr);
     
-    if ([error.domain isEqualToString:LMPTOMLErrorDomain]) {
-        NSString *errorString = error.localizedFailureReason;
-        NSRange atLineRange = [errorString rangeOfString:@"at line "];
-        if (atLineRange.location != NSNotFound) {
-            int context = 1;
-            NSInteger lineNumber = [[errorString substringFromIndex:NSMaxRange(atLineRange)] integerValue];
-            showLineWithContext(stderr, [[NSString alloc] initWithData:inputData encoding:NSUTF8StringEncoding], lineNumber, context);
-        }
+    if (supportsAnsiColor && error.userInfo[LMPTOMLErrorInfoKeyColorizedReason]) {
+        fputs([error.userInfo[LMPTOMLErrorInfoKeyColorizedReason] UTF8String], stderr);
+    } else {
+        fputs(error.localizedFailureReason.UTF8String, stderr);
     }
-    
+    fputs("\n", stderr);
+        
     exit(EXIT_FAILURE);
 }
 
@@ -183,7 +195,7 @@ int main(int argc, const char * argv[]) {
                 }
                 
                 if (inputFormat == FileFormatTOML) {
-                    tomlObject = [LMPTOMLSerialization TOMLObjectWithData:inputData error:&error];
+                    tomlObject = [LMPTOMLSerialization TOMLObjectWithData:inputData options:filenameString ? @{LMPTOMLOptionKeySourceFileURL : [NSURL fileURLWithPath:filenameString]} : nil error:&error];
                     showErrorAndHalt(error, inputData);
                 } else if (inputFormat == FileFormatJSON) {
                     dictionaryObject = [NSJSONSerialization JSONObjectWithData:inputData options:0 error:&error];

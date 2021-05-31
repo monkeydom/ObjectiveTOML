@@ -5,7 +5,7 @@
 
 #import "LMPTOMLSerialization.h"
 
-// #define TOML11_COLORIZE_ERROR_MESSAGE
+#define TOML11_COLORIZE_ERROR_MESSAGE
 
 // #define TOML11_PRESERVE_COMMENTS_BY_DEFAULT
 #include "toml.hpp"
@@ -23,9 +23,19 @@ NSErrorDomain const LMPTOMLErrorDomain = @"productions.monkey.lone.TOML";
 static NSInteger const LMPTOMLParseErrorCode = 7031;
 static NSInteger const LMPTOMLWriteErrorCode = 7001;
 
+NSString * const LMPTOMLErrorInfoKeyColorizedReason = @"ColoredFailureReason";
+
+extern NSString * const LMPTOMLOptionKeySourceFileURL = @"sourceFileURL";
+
+
+
 @implementation LMPTOMLSerialization
 
 + (NSDictionary <NSString *, id>*)TOMLObjectWithData:(NSData *)data error:(NSError **)error {
+    return [self TOMLObjectWithData:data options:nil error:error];
+}
+
++ (NSDictionary <NSString *, id>*)TOMLObjectWithData:(NSData *)data options:(NSDictionary *)options error:(NSError **)error {
     
     try {
         char *bytes = (char *)data.bytes;
@@ -38,8 +48,12 @@ static NSInteger const LMPTOMLWriteErrorCode = 7001;
         // this works as well, probably does more copying than we need
         // std::istringstream stream(std::string(bytes, data.length));
         
+        NSURL *fileSourceURL = options[LMPTOMLOptionKeySourceFileURL];
+        
+        NSString *filePath = fileSourceURL ? fileSourceURL.relativePath : @"anonymous input";
+        
         // parse
-        const auto data = toml::parse(stream);
+        const auto data = toml::parse(stream, filePath.UTF8String);
         
         // convert table to standard Objective-C objects
         toml_nsdictionary_writer dw;
@@ -52,11 +66,16 @@ static NSInteger const LMPTOMLWriteErrorCode = 7001;
         
     } catch (const toml::exception& e) {
         if (error) {
+            NSString *coloredWhat = @(e.what());
+            NSRegularExpression *regEx = [NSRegularExpression regularExpressionWithPattern:@"\033\\[\\d+m" options:0 error:nil];
+            NSString *cleanWhat = [regEx stringByReplacingMatchesInString:coloredWhat options:0 range:NSMakeRange(0, coloredWhat.length) withTemplate:@""];
+            
             *error = [NSError errorWithDomain:LMPTOMLErrorDomain
                                          code:LMPTOMLParseErrorCode
                                      userInfo:@{
                                          NSLocalizedDescriptionKey : @"Input TOML could not be parsed",
-                                         NSLocalizedFailureReasonErrorKey : [NSString stringWithFormat:@"%s", e.what()],
+                                         NSLocalizedFailureReasonErrorKey : cleanWhat,
+                                         LMPTOMLErrorInfoKeyColorizedReason : coloredWhat,
                                      }];
         }
         return nil;
