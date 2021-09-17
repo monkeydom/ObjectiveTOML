@@ -29,6 +29,7 @@
 		F22CB712217B239300D1565D /* LMPTOMLSerialization.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMPTOMLSerialization.h; sourceTree = "<group>"; };
 		F22CB713217B239300D1565D /* LMPTOMLSerialization.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LMPTOMLSerialization.mm; sourceTree = "<group>"; };
 		F23131842663608400AFE2BA /* toml.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = toml.hpp; path = submodules/toml11/toml.hpp; sourceTree = SOURCE_ROOT; };
+		F2657CF126F4D26B00C279B9 /* tomlutil */ = {isa = PBXFileReference; lastKnownFileType = text; path = tomlutil; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2962202217F303B00C44751 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F2BC7534217B44D10056FAED /* LMP_toml_visitors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMP_toml_visitors.h; sourceTree = "<group>"; };
 		F2FAE3732663A3DC0080F81A /* region.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = region.hpp; sourceTree = "<group>"; };
@@ -92,8 +93,17 @@
 				F23131842663608400AFE2BA /* toml.hpp */,
 				F2FAE3722663A3DC0080F81A /* toml */,
 				F2962202217F303B00C44751 /* Info.plist */,
+				F2657CF026F4D24E00C279B9 /* Products */,
 			);
 			path = tomlutil;
+			sourceTree = "<group>";
+		};
+		F2657CF026F4D24E00C279B9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F2657CF126F4D26B00C279B9 /* tomlutil */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 		F2FAE3722663A3DC0080F81A /* toml */ = {
