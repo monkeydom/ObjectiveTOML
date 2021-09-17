@@ -152,7 +152,7 @@
 		F22CB6FF217B1FD600D1565D /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1000;
+				LastUpgradeCheck = 1300;
 				ORGANIZATIONNAME = "Lone Monkey Productions";
 				TargetAttributes = {
 					F22CB706217B1FD600D1565D = {

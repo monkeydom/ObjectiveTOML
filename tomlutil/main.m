@@ -93,21 +93,48 @@ static LMPFileFormat formatFromFilename(NSString *filename) {
     return result;
 }
 
+static NSString *version_string(void) {
+    NSString *shortVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+//            NSString *bundleVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
+    NSString *toml11Version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"LPMToml11Version"];
+
+    NSString *versionLineString = [NSString stringWithFormat:@"tomlutil v%@ (toml11 v%@)", shortVersion, toml11Version];
+    return versionLineString;
+}
+
+static void show_help(BOOL versionOnly) {
+    
+    puts(version_string().UTF8String);
+    
+    if (versionOnly)  {
+        return;
+    }
+
+    puts("");
+    puts("Usage: tomlutil [-f json|xml1|binary1|toml] file [outputfile]\n\n"
+         "A file of '-' reads from stdin. Can read json, plists and toml. Output defaults to stdout.\n"
+         "-f format   Output format. One of json, xml1, binary1, toml. Defaults to toml.\n"
+         "-lint       Just lint with toml11, no output.");
+}
+
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
-        if (argc <= 1) {
-            NSString *shortVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
-//            NSString *bundleVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
-            NSString *toml11Version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"LPMToml11Version"];
-
-            NSString *versionLineString = [NSString stringWithFormat:@"tomlutil v%@ (toml11 v%@)", shortVersion, toml11Version];
-            
-            puts(versionLineString.UTF8String);
-            puts("");
-            puts("Usage: tomlutil [-f json|xml1|binary1|toml] file [outputfile]\n\n"
-                 "A file of '-' reads from stdin. Can read json, plists and toml. Output defaults to stdout.\n"
-                 "-f format   Output format. One of json, xml1, binary1, toml. Defaults to toml.\n"
-                 "-lint       Just lint with toml11, no output.");
+        
+        BOOL showHelp = argc <= 1;
+        
+        if (!showHelp && argc == 2) {
+            NSString *argument = [[NSProcessInfo processInfo].arguments lastObject];
+            NSArray *helpArgs = @[@"-h",@"-help",@"--help"];
+            if ([helpArgs containsObject:argument]) {
+                showHelp = YES;
+            } else if ([@[@"-v",@"-version",@"--version"] containsObject:argument]) {
+                show_help(YES);
+                return EXIT_SUCCESS;
+            }
+        }
+        
+        if (showHelp) {
+            show_help(NO);
             return EXIT_SUCCESS;
         }
         
