@@ -17,29 +17,6 @@ typedef CF_ENUM(int, LMPFileFormat) {
     FileFormatNone = 99991,
 };
 
-
-// unused toml11 provides ample output
-//static void showLineWithContext(FILE *file, NSString *fullSourceString, NSInteger lineNumber, int context) {
-//    NSInteger lineNumberStart = MAX(1, lineNumber - context);
-//    NSInteger lineNumberStop = lineNumber + context;
-//
-//    NSMutableArray <NSString *>*lineArray = [NSMutableArray new];
-//    __block NSInteger currentLineNumber = 1;
-//    [fullSourceString enumerateLinesUsingBlock:^(NSString *line, BOOL *stop) {
-//        if (currentLineNumber >= lineNumberStart) {
-//            [lineArray addObject:line];
-//        }
-//        if (currentLineNumber >= lineNumberStop) { *stop = YES; }
-//        currentLineNumber += 1;
-//    }];
-//    currentLineNumber = lineNumberStart;
-//    int lineMaxWidth = (int)ceil(log10(lineNumberStop)) + 1;
-//    [lineArray enumerateObjectsUsingBlock:^(NSString *line, NSUInteger index, BOOL *_stop) {
-//        NSInteger number = index + lineNumberStart;
-//        fprintf(file, "%s%*ld: %s\n", number == lineNumber ? "➤" : " ", lineMaxWidth, (long)number, [[line stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]] UTF8String]);
-//    }];
-//}
-
 void showErrorAndHalt(NSError *error, NSData *inputData) {
     if (!error) {
         return;
