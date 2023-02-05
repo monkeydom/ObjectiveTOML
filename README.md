@@ -165,7 +165,7 @@ Full header:
 
 ## Authors
 
-* **Dominik Wagner** - [monkeydom](https://github.com/monkeydom) - [@monkeydom@mastodon.technology](https://mastodon.technology/@monkeydom) - [@monkeydom](https://twitter.com/monkeydom)
+* **Dominik Wagner** - [monkeydom](https://github.com/monkeydom) - [@monkeydom@mastodon.social](https://mastodon.social/@monkeydom)
 
 ## License
 
