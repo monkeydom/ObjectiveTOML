@@ -207,7 +207,11 @@ int main(int argc, const char * argv[]) {
                     tomlObject = [LMPTOMLSerialization TOMLObjectWithData:inputData options:filenameString ? @{LMPTOMLOptionKeySourceFileURL : [NSURL fileURLWithPath:filenameString]} : nil error:&error];
                     showErrorAndHalt(error, inputData);
                 } else if (inputFormat == FileFormatJSON) {
-                    dictionaryObject = [NSJSONSerialization JSONObjectWithData:inputData options:0 error:&error];
+                    NSJSONReadingOptions opts = NSJSONReadingFragmentsAllowed;
+                    if (@available(macOS 12.0, *)) {
+                        opts |= NSJSONReadingJSON5Allowed;
+                    }
+                    dictionaryObject = [NSJSONSerialization JSONObjectWithData:inputData options:opts error:&error];
                     showErrorAndHalt(error, inputData);
                 } else {
                     dictionaryObject = [NSPropertyListSerialization propertyListWithData:inputData options:0 format:nil error:&error];
@@ -247,6 +251,8 @@ int main(int argc, const char * argv[]) {
                         if (@available(macOS 10.13, *)) {
                             options |= NSJSONWritingSortedKeys;
                         }
+                        options |= NSJSONWritingWithoutEscapingSlashes;
+                        
                         outputData = [NSJSONSerialization dataWithJSONObject:dictionaryObject options:options error:&error];
                         showErrorAndHalt(error, inputData);
                     } else {
