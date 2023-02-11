@@ -73,7 +73,7 @@ static LMPFileFormat formatFromFilename(NSString *filename) {
 static NSString *version_string(void) {
     NSString *shortVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
 //            NSString *bundleVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
-    NSString *toml11Version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"LPMToml11Version"];
+    NSString *toml11Version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"LMPToml11Version"];
 
     NSString *versionLineString = [NSString stringWithFormat:@"tomlutil v%@ (toml11 v%@)", shortVersion, toml11Version];
     return versionLineString;
