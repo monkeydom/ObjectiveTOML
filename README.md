@@ -41,7 +41,6 @@ Usage: tomlutil [-f json|xml1|binary1|toml] file [outputfile]
 A file of '-' reads from stdin. Can read json, plists and toml. Output defaults to stdout.
 -f format   Output format. One of json, xml1, binary1, toml. Defaults to toml.
 -lint       Just lint with toml11, no output.
-┌─(...-cxgxrczcjchjyyhfjlnxipqyqbsh/Build/Products/Debug)───(dom@darthy:s001)─┐
 ```
 
 Simple conversion of the Mojave News.app plist to TOML:
