@@ -28,9 +28,32 @@
 		F22CB70A217B1FD600D1565D /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		F22CB712217B239300D1565D /* LMPTOMLSerialization.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMPTOMLSerialization.h; sourceTree = "<group>"; };
 		F22CB713217B239300D1565D /* LMPTOMLSerialization.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = LMPTOMLSerialization.mm; sourceTree = "<group>"; };
-		F22CB715217B2B1C00D1565D /* cpptoml.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; name = cpptoml.h; path = submodules/cpptoml/include/cpptoml.h; sourceTree = SOURCE_ROOT; };
+		F23131842663608400AFE2BA /* toml.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = toml.hpp; path = submodules/toml11/toml.hpp; sourceTree = SOURCE_ROOT; };
+		F2657CF126F4D26B00C279B9 /* tomlutil */ = {isa = PBXFileReference; lastKnownFileType = text; path = tomlutil; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2962202217F303B00C44751 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		F2BC7534217B44D10056FAED /* LMP_cpptoml_visitors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMP_cpptoml_visitors.h; sourceTree = "<group>"; };
+		F2BC7534217B44D10056FAED /* LMP_toml_visitors.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LMP_toml_visitors.h; sourceTree = "<group>"; };
+		F2FAE3732663A3DC0080F81A /* region.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = region.hpp; sourceTree = "<group>"; };
+		F2FAE3742663A3DC0080F81A /* datetime.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = datetime.hpp; sourceTree = "<group>"; };
+		F2FAE3752663A3DC0080F81A /* serializer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = serializer.hpp; sourceTree = "<group>"; };
+		F2FAE3762663A3DC0080F81A /* utility.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = utility.hpp; sourceTree = "<group>"; };
+		F2FAE3772663A3DC0080F81A /* get.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = get.hpp; sourceTree = "<group>"; };
+		F2FAE3782663A3DC0080F81A /* parser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = parser.hpp; sourceTree = "<group>"; };
+		F2FAE3792663A3DC0080F81A /* literal.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = literal.hpp; sourceTree = "<group>"; };
+		F2FAE37A2663A3DC0080F81A /* macros.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = macros.hpp; sourceTree = "<group>"; };
+		F2FAE37B2663A3DC0080F81A /* traits.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = traits.hpp; sourceTree = "<group>"; };
+		F2FAE37C2663A3DC0080F81A /* comments.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = comments.hpp; sourceTree = "<group>"; };
+		F2FAE37D2663A3DC0080F81A /* source_location.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = source_location.hpp; sourceTree = "<group>"; };
+		F2FAE37E2663A3DC0080F81A /* combinator.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = combinator.hpp; sourceTree = "<group>"; };
+		F2FAE37F2663A3DC0080F81A /* value.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = value.hpp; sourceTree = "<group>"; };
+		F2FAE3802663A3DC0080F81A /* from.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = from.hpp; sourceTree = "<group>"; };
+		F2FAE3812663A3DC0080F81A /* result.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = result.hpp; sourceTree = "<group>"; };
+		F2FAE3822663A3DC0080F81A /* into.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = into.hpp; sourceTree = "<group>"; };
+		F2FAE3832663A3DC0080F81A /* lexer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = lexer.hpp; sourceTree = "<group>"; };
+		F2FAE3842663A3DC0080F81A /* string.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = string.hpp; sourceTree = "<group>"; };
+		F2FAE3852663A3DC0080F81A /* storage.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = storage.hpp; sourceTree = "<group>"; };
+		F2FAE3862663A3DC0080F81A /* color.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = color.hpp; sourceTree = "<group>"; };
+		F2FAE3872663A3DC0080F81A /* types.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = types.hpp; sourceTree = "<group>"; };
+		F2FAE3882663A3DC0080F81A /* exception.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = exception.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,12 +89,52 @@
 				F22CB70A217B1FD600D1565D /* main.m */,
 				F22CB712217B239300D1565D /* LMPTOMLSerialization.h */,
 				F22CB713217B239300D1565D /* LMPTOMLSerialization.mm */,
-				F2BC7534217B44D10056FAED /* LMP_cpptoml_visitors.h */,
-				F22CB715217B2B1C00D1565D /* cpptoml.h */,
+				F2BC7534217B44D10056FAED /* LMP_toml_visitors.h */,
+				F23131842663608400AFE2BA /* toml.hpp */,
+				F2FAE3722663A3DC0080F81A /* toml */,
 				F2962202217F303B00C44751 /* Info.plist */,
+				F2657CF026F4D24E00C279B9 /* Products */,
 			);
 			path = tomlutil;
 			sourceTree = "<group>";
+		};
+		F2657CF026F4D24E00C279B9 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F2657CF126F4D26B00C279B9 /* tomlutil */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		F2FAE3722663A3DC0080F81A /* toml */ = {
+			isa = PBXGroup;
+			children = (
+				F2FAE3732663A3DC0080F81A /* region.hpp */,
+				F2FAE3742663A3DC0080F81A /* datetime.hpp */,
+				F2FAE3752663A3DC0080F81A /* serializer.hpp */,
+				F2FAE3762663A3DC0080F81A /* utility.hpp */,
+				F2FAE3772663A3DC0080F81A /* get.hpp */,
+				F2FAE3782663A3DC0080F81A /* parser.hpp */,
+				F2FAE3792663A3DC0080F81A /* literal.hpp */,
+				F2FAE37A2663A3DC0080F81A /* macros.hpp */,
+				F2FAE37B2663A3DC0080F81A /* traits.hpp */,
+				F2FAE37C2663A3DC0080F81A /* comments.hpp */,
+				F2FAE37D2663A3DC0080F81A /* source_location.hpp */,
+				F2FAE37E2663A3DC0080F81A /* combinator.hpp */,
+				F2FAE37F2663A3DC0080F81A /* value.hpp */,
+				F2FAE3802663A3DC0080F81A /* from.hpp */,
+				F2FAE3812663A3DC0080F81A /* result.hpp */,
+				F2FAE3822663A3DC0080F81A /* into.hpp */,
+				F2FAE3832663A3DC0080F81A /* lexer.hpp */,
+				F2FAE3842663A3DC0080F81A /* string.hpp */,
+				F2FAE3852663A3DC0080F81A /* storage.hpp */,
+				F2FAE3862663A3DC0080F81A /* color.hpp */,
+				F2FAE3872663A3DC0080F81A /* types.hpp */,
+				F2FAE3882663A3DC0080F81A /* exception.hpp */,
+			);
+			name = toml;
+			path = submodules/toml11/toml;
+			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXGroup section */
 
@@ -99,7 +162,7 @@
 		F22CB6FF217B1FD600D1565D /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1000;
+				LastUpgradeCheck = 1300;
 				ORGANIZATIONNAME = "Lone Monkey Productions";
 				TargetAttributes = {
 					F22CB706217B1FD600D1565D = {
@@ -143,7 +206,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -188,7 +251,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -202,7 +265,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
@@ -241,7 +304,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
@@ -251,11 +314,9 @@
 		F22CB70F217B1FD600D1565D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CODE_SIGN_STYLE = Automatic;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
 				INFOPLIST_FILE = tomlutil/Info.plist;
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = productions.monkey.lone.tomlutil;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -264,11 +325,9 @@
 		F22CB710217B1FD600D1565D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "c++17";
 				CODE_SIGN_STYLE = Automatic;
 				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
 				INFOPLIST_FILE = tomlutil/Info.plist;
-				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				PRODUCT_BUNDLE_IDENTIFIER = productions.monkey.lone.tomlutil;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};

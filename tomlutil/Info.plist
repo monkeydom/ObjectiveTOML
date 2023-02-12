@@ -5,9 +5,9 @@
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1.0</string>
-	<key>LPMCpptomlVersion</key>
-	<string>0.1.1</string>
+	<string>2.0.0</string>
+	<key>LMPToml11Version</key>
+	<string>3.7.1</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>${MACOSX_DEPLOYMENT_TARGET}</string>
 </dict>

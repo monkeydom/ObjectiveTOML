@@ -17,34 +17,28 @@ typedef CF_ENUM(int, LMPFileFormat) {
     FileFormatNone = 99991,
 };
 
-static void showLineWithContext(FILE *file, NSString *fullSourceString, NSInteger lineNumber, int context) {
-    NSInteger lineNumberStart = MAX(1, lineNumber - context);
-    NSInteger lineNumberStop = lineNumber + context;
-    
-    NSMutableArray <NSString *>*lineArray = [NSMutableArray new];
-    __block NSInteger currentLineNumber = 1;
-    [fullSourceString enumerateLinesUsingBlock:^(NSString *line, BOOL *stop) {
-        if (currentLineNumber >= lineNumberStart) {
-            [lineArray addObject:line];
-        }
-        if (currentLineNumber >= lineNumberStop) { *stop = YES; }
-        currentLineNumber += 1;
-    }];
-    currentLineNumber = lineNumberStart;
-    int lineMaxWidth = (int)ceil(log10(lineNumberStop)) + 1;
-    [lineArray enumerateObjectsUsingBlock:^(NSString *line, NSUInteger index, BOOL *_stop) {
-        NSInteger number = index + lineNumberStart;
-        fprintf(file, "%s%*ld: %s\n", number == lineNumber ? "➤" : " ", lineMaxWidth, (long)number, [[line stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]] UTF8String]);
-    }];
-}
-
 void showErrorAndHalt(NSError *error, NSData *inputData) {
     if (!error) {
         return;
     }
     char *bold="";
     char *stopBold="";
-    if (isatty([[NSFileHandle fileHandleWithStandardError] fileDescriptor])) {
+    
+    BOOL supportsAnsiColor = isatty([[NSFileHandle fileHandleWithStandardError] fileDescriptor]);
+    
+    if (supportsAnsiColor) {
+        NSString *term = [[NSProcessInfo processInfo] environment][@"TERM"] ;
+        if (term && (
+            [term rangeOfString:@"color" options:NSCaseInsensitiveSearch].location != NSNotFound ||
+                     [term rangeOfString:@"ansi" options:NSCaseInsensitiveSearch].location != NSNotFound
+            )
+            ){
+        } else {
+            supportsAnsiColor = NO;
+        }
+        
+    }
+    if (supportsAnsiColor) {
         bold="\033[1m";
         stopBold="\033[0m";
     }
@@ -53,19 +47,14 @@ void showErrorAndHalt(NSError *error, NSData *inputData) {
     fputs(error.localizedDescription.UTF8String, stderr);
     fputs(stopBold, stderr);
     fputs("\n", stderr);
-    fputs(error.localizedFailureReason.UTF8String, stderr);
-    fputs("\n", stderr);
     
-    if ([error.domain isEqualToString:LMPTOMLErrorDomain]) {
-        NSString *errorString = error.localizedFailureReason;
-        NSRange atLineRange = [errorString rangeOfString:@"at line "];
-        if (atLineRange.location != NSNotFound) {
-            int context = 1;
-            NSInteger lineNumber = [[errorString substringFromIndex:NSMaxRange(atLineRange)] integerValue];
-            showLineWithContext(stderr, [[NSString alloc] initWithData:inputData encoding:NSUTF8StringEncoding], lineNumber, context);
-        }
+    if (supportsAnsiColor && error.userInfo[LMPTOMLErrorInfoKeyColorizedReason]) {
+        fputs([error.userInfo[LMPTOMLErrorInfoKeyColorizedReason] UTF8String], stderr);
+    } else {
+        fputs(error.localizedFailureReason.UTF8String, stderr);
     }
-    
+    fputs("\n", stderr);
+        
     exit(EXIT_FAILURE);
 }
 
@@ -81,21 +70,48 @@ static LMPFileFormat formatFromFilename(NSString *filename) {
     return result;
 }
 
+static NSString *version_string(void) {
+    NSString *shortVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
+//            NSString *bundleVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
+    NSString *toml11Version = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"LMPToml11Version"];
+
+    NSString *versionLineString = [NSString stringWithFormat:@"tomlutil v%@ (toml11 v%@)", shortVersion, toml11Version];
+    return versionLineString;
+}
+
+static void show_help(BOOL versionOnly) {
+    
+    puts(version_string().UTF8String);
+    
+    if (versionOnly)  {
+        return;
+    }
+
+    puts("");
+    puts("Usage: tomlutil [-f json|xml1|binary1|toml] file [outputfile]\n\n"
+         "A file of '-' reads from stdin. Can read json, plists and toml. Output defaults to stdout.\n"
+         "-f format   Output format. One of json, xml1, binary1, toml. Defaults to toml.\n"
+         "-lint       Just lint with toml11, no output.");
+}
+
 int main(int argc, const char * argv[]) {
     @autoreleasepool {
-        if (argc <= 1) {
-            NSString *shortVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
-//            NSString *bundleVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"];
-            NSString *cpptomlVersion = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"LPMCpptomlVersion"];
-
-            NSString *versionLineString = [NSString stringWithFormat:@"tomlutil v%@ (cpptoml v%@)", shortVersion, cpptomlVersion];
-            
-            puts(versionLineString.UTF8String);
-            puts("");
-            puts("Usage: tomlutil [-f json|xml1|binary1|toml] file [outputfile]\n\n"
-                 "A file of '-' reads from stdin. Can read json, plists and toml. Output defaults to stdout.\n"
-                 "-f format   Output format. One of json, xml, binary1, toml. Defaults to toml.\n"
-                 "-lint       Just lint with cpptoml, no output.");
+        
+        BOOL showHelp = argc <= 1;
+        
+        if (!showHelp && argc == 2) {
+            NSString *argument = [[NSProcessInfo processInfo].arguments lastObject];
+            NSArray *helpArgs = @[@"-h",@"-help",@"--help"];
+            if ([helpArgs containsObject:argument]) {
+                showHelp = YES;
+            } else if ([@[@"-v",@"-version",@"--version"] containsObject:argument]) {
+                show_help(YES);
+                return EXIT_SUCCESS;
+            }
+        }
+        
+        if (showHelp) {
+            show_help(NO);
             return EXIT_SUCCESS;
         }
         
@@ -117,7 +133,12 @@ int main(int argc, const char * argv[]) {
                             if (outputFormat != FileFormatNone) {
                                 outputFormat = [@{
                                                   @"toml" : @(FileFormatTOML),
+
                                                   @"json" : @(FileFormatJSON),
+
+                                                  @"plist" : @(FileFormatPlistXML),
+                                                  @"xml" : @(FileFormatPlistXML),
+                                                  @"binary" : @(FileFormatPlistBinary),
                                                   @"xml1" : @(FileFormatPlistXML),
                                                   @"binary1" : @(FileFormatPlistBinary),
                                                   }[argument] intValue] ?: outputFormat;
@@ -183,10 +204,14 @@ int main(int argc, const char * argv[]) {
                 }
                 
                 if (inputFormat == FileFormatTOML) {
-                    tomlObject = [LMPTOMLSerialization TOMLObjectWithData:inputData error:&error];
+                    tomlObject = [LMPTOMLSerialization TOMLObjectWithData:inputData options:filenameString ? @{LMPTOMLOptionKeySourceFileURL : [NSURL fileURLWithPath:filenameString]} : nil error:&error];
                     showErrorAndHalt(error, inputData);
                 } else if (inputFormat == FileFormatJSON) {
-                    dictionaryObject = [NSJSONSerialization JSONObjectWithData:inputData options:0 error:&error];
+                    NSJSONReadingOptions opts = NSJSONReadingFragmentsAllowed;
+                    if (@available(macOS 12.0, *)) {
+                        opts |= NSJSONReadingJSON5Allowed;
+                    }
+                    dictionaryObject = [NSJSONSerialization JSONObjectWithData:inputData options:opts error:&error];
                     showErrorAndHalt(error, inputData);
                 } else {
                     dictionaryObject = [NSPropertyListSerialization propertyListWithData:inputData options:0 format:nil error:&error];
@@ -226,6 +251,8 @@ int main(int argc, const char * argv[]) {
                         if (@available(macOS 10.13, *)) {
                             options |= NSJSONWritingSortedKeys;
                         }
+                        options |= NSJSONWritingWithoutEscapingSlashes;
+                        
                         outputData = [NSJSONSerialization dataWithJSONObject:dictionaryObject options:options error:&error];
                         showErrorAndHalt(error, inputData);
                     } else {
